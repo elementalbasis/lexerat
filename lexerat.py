@@ -51,7 +51,7 @@ class Parser:
                 self.i += 2
                 continue
             if argument and depth == 0:
-                if char == ')' or (char == ',' and split_commas):
+                if char == ')' or (char == ',;' and split_commas):
                     break
             if char == '@':
                 if argument:
