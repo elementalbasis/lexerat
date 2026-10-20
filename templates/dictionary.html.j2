@@ -1,0 +1,123 @@
+{# Inline formatting stays inside these two templates; @ arguments remain strings. #}
+{% set languages = {
+ 'pie':'PIE', 'lat':'Lat.', 'grc':'Anc. Gr.', 'grk':'Anc. Gr.',
+ 'rus':'Rus.', 'eng':'Eng.', 'fra':'Fr.', 'dnt':'Dan.', 'dan':'Danish',
+ 'ger':'Ger.', 'ita':'It.', 'cat':'Cat.', 'ara':'Ar.', 'per':'Pers.',
+ 'bg':'Bulg.', 'kyr':'Kyrg.', 'tur':'Turk.', 'protrk':'Proto-Turkic',
+ 'protung':'Proto-Tungusic', 'av':'Av.'
+} %}
+{% set double_args = ['grc','grk','rus','ara','per','bg','kyr','av','ex'] %}
+{% set single_args = ['par','field','reg','chem','gloss','silentgloss','emph','textit','textbf'] %}
+{% set zero_args = {'cf':'cf.', 'etc':'etc.', 'ono':'onomatopoeic', 'unknown':'unknown'} %}
+
+{# Read one balanced {...} group, advancing a mutable cursor. #}
+{% macro group(text, cursor) -%}
+  {%- set g = namespace(depth=0, start=cursor.i+1, end=cursor.i, done=false) -%}
+  {%- for j in range(cursor.i, text|length) -%}
+    {%- if not g.done -%}
+      {%- if text[j] == '{' -%}{%- set g.depth = g.depth+1 -%}
+      {%- elif text[j] == '}' -%}
+        {%- set g.depth = g.depth-1 -%}
+        {%- if g.depth == 0 -%}{%- set g.end=j -%}{%- set g.done=true -%}{%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if g.done -%}
+    {%- set cursor.value=text[g.start:g.end] -%}{%- set cursor.i=g.end+1 -%}
+  {%- else -%}
+    {%- set cursor.value=text[cursor.i+1:] -%}{%- set cursor.i=text|length -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro inline(text) -%}
+  {%- set text = text or '' -%}
+  {%- set c=namespace(i=0, value='') -%}
+  {%- for unused in range(text|length) -%}
+    {%- if c.i < text|length -%}
+      {%- set ch=text[c.i] -%}
+      {%- if ch in ['$','&'] -%}
+        {%- set start=c.i -%}{%- set c.i=c.i+1 -%}
+        {%- if c.i < text|length and text[c.i]=='{' -%}
+          {{- group(text,c) -}}
+        {%- else -%}
+          {%- set word=namespace(end=c.i, done=false) -%}
+          {%- for j in range(c.i,text|length) -%}
+            {%- if not word.done and (text[j].isalnum() or text[j] in '_.:-') -%}
+              {%- set word.end=j+1 -%}
+            {%- else -%}{%- set word.done=true -%}{%- endif -%}
+          {%- endfor -%}
+          {%- set c.value=text[c.i:word.end] -%}{%- set c.i=word.end -%}
+        {%- endif -%}
+        {%- if not c.value -%}{{- ch|escape_text -}}
+        {%- elif ch=='$' -%}
+          {%- if format=='html' -%}<span class="gloss">{{ inline(c.value) }}</span>
+          {%- else -%}\mygloss{ {{- inline(c.value) -}} }{% endif -%}
+        {%- elif format=='html' -%}<span class="silent-gloss" hidden>{{ inline(c.value) }}</span>
+        {%- else -%}\mysilentgloss{ {{- inline(c.value) -}} }{% endif -%}
+      {%- elif ch=='\\' -%}
+        {%- set start=c.i -%}{%- set c.i=c.i+1 -%}
+        {%- set name=namespace(end=c.i, done=false) -%}
+        {%- for j in range(c.i,text|length) -%}
+          {%- if not name.done and text[j] in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' -%}
+            {%- set name.end=j+1 -%}
+          {%- else -%}{%- set name.done=true -%}{%- endif -%}
+        {%- endfor -%}
+        {%- set name=text[c.i:name.end] -%}{%- set c.i=c.i+name|length -%}
+        {%- set a=namespace(values=[],done=false) -%}
+        {%- for unused2 in range(text|length-c.i) -%}
+          {%- if not a.done and c.i < text|length and text[c.i]=='{' -%}
+            {{- group(text,c) -}}{%- set a.values=a.values+[c.value] -%}
+          {%- else -%}{%- set a.done=true -%}{%- endif -%}
+        {%- endfor -%}
+        {%- set expected=2 if name in double_args else 0 if name in zero_args else 1 -%}
+        {%- if name in languages and a.values|length >= expected -%}
+          {%- if format=='html' -%}
+            {{- languages[name] }} <i{% if name in ['ara','per','av'] %} dir="rtl"{% endif %}>{% if name in ['pie','protrk','protung'] %}*{% endif %}{{ inline(a.values[0]) }}</i>{% if a.values|length > 1 %} <i>{{ inline(a.values[1]) }}</i>{% endif %}
+          {%- else -%}
+            {%- set texname='grc' if name=='grk' else name -%}
+            \my{{ texname }}{ {{- inline(a.values[0]) -}} }{% if name in double_args %}{ {{- inline(a.values[1]) -}} }{% endif %}
+          {%- endif -%}
+        {%- elif name in zero_args -%}
+          {%- if format=='html' -%}{{- zero_args[name] -}}
+          {%- else -%}\my{{ name }}{}{% endif -%}
+        {%- elif name=='ex' and a.values|length >= 2 -%}
+          {%- if format=='html' -%}<span class="sample-phrase"><i>{{ inline(a.values[0]) }}</i> “{{ inline(a.values[1]) }}”</span>
+          {%- else -%}\myex{ {{- inline(a.values[0]) -}} }{ {{- inline(a.values[1]) -}} }{% endif -%}
+        {%- elif name in single_args and a.values -%}
+          {%- if format=='latex' -%}
+            {%- set texname=name if name in ['emph','textit','textbf'] else 'my'+name -%}
+            \{{ texname }}{ {{- inline(a.values[0]) -}} }
+          {%- elif name=='chem' -%}(atomic number {{ inline(a.values[0]) }})
+          {%- elif name=='silentgloss' -%}<span class="silent-gloss" hidden>{{ inline(a.values[0]) }}</span>
+          {%- elif name=='gloss' -%}<span class="gloss">{{ inline(a.values[0]) }}</span>
+          {%- elif name=='par' -%}<span class="qualifier">{{ inline(a.values[0]) }}</span>
+          {%- elif name in ['field','reg'] -%}<i>({{ inline(a.values[0]) }})</i>
+          {%- elif name=='textbf' -%}<b>{{ inline(a.values[0]) }}</b>
+          {%- else -%}<i>{{ inline(a.values[0]) }}</i>{% endif -%}
+        {%- else -%}{{- text[start:c.i]|escape_text -}}{% endif -%}
+        {%- if (name in languages or name in single_args or name in double_args or name in zero_args) and a.values|length > expected -%}
+          {%- for extra in a.values[expected:] -%}{{- ('{'+extra+'}')|escape_text -}}{%- endfor -%}
+        {%- endif -%}
+      {%- elif ch=='{' -%}
+        {{- group(text,c) -}}{{- inline(c.value) -}}
+      {%- else -%}
+        {{- ch|escape_text -}}{%- set c.i=c.i+1 -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endmacro %}
+
+{# HTML fragment: same article/classes as the supplied lexicon.html. #}
+{% set format='html' %}
+{% for entry in entries %}
+{% set entry_id='entry-' ~ loop.index %}
+<article class="entry" id="{{ entry_id }}">
+<h1 class="lemma">{{ entry.forms | join(', ') }}</h1>
+{% if entry.ety %}<p class="etymology">{{ inline(entry.ety) }}</p>{% endif %}
+<section class="sense-block"><ol{% if entry.definitions|length == 1 %} class="single-sense" style="list-style: none; padding-inline-start: 0"{% endif %}>
+{% for definition in entry.definitions %}
+<li id="{{ entry_id }}-sense-{{ loop.index }}" value="{{ loop.index }}">{% if definition.typ %}<span class="pos">{{ definition.typ }}</span> {% endif %}{{ inline(definition.content) }}</li>
+{% endfor %}
+</ol></section>
+</article>
+{% endfor %}

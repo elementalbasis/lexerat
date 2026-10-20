@@ -1,0 +1,385 @@
+<# Inline formatting stays inside these two templates; @ arguments remain strings. #>
+<% set languages = {
+ 'pie':'PIE', 'lat':'Lat.', 'grc':'Anc. Gr.', 'grk':'Anc. Gr.',
+ 'rus':'Rus.', 'eng':'Eng.', 'fra':'Fr.', 'dnt':'Dan.', 'dan':'Danish',
+ 'ger':'Ger.', 'ita':'It.', 'cat':'Cat.', 'ara':'Ar.', 'per':'Pers.',
+ 'bg':'Bulg.', 'kyr':'Kyrg.', 'tur':'Turk.', 'protrk':'Proto-Turkic',
+ 'protung':'Proto-Tungusic', 'av':'Av.'
+} %>
+<% set double_args = ['grc','grk','rus','ara','per','bg','kyr','av','ex'] %>
+<% set single_args = ['par','field','reg','chem','gloss','silentgloss','emph','textit','textbf'] %>
+<% set zero_args = {'cf':'cf.', 'etc':'etc.', 'ono':'onomatopoeic', 'unknown':'unknown'} %>
+
+<# Read one balanced {...} group, advancing a mutable cursor. #>
+<% macro group(text, cursor) -%>
+  <%- set g = namespace(depth=0, start=cursor.i+1, end=cursor.i, done=false) -%>
+  <%- for j in range(cursor.i, text|length) -%>
+    <%- if not g.done -%>
+      <%- if text[j] == '{' -%><%- set g.depth = g.depth+1 -%>
+      <%- elif text[j] == '}' -%>
+        <%- set g.depth = g.depth-1 -%>
+        <%- if g.depth == 0 -%><%- set g.end=j -%><%- set g.done=true -%><%- endif -%>
+      <%- endif -%>
+    <%- endif -%>
+  <%- endfor -%>
+  <%- if g.done -%>
+    <%- set cursor.value=text[g.start:g.end] -%><%- set cursor.i=g.end+1 -%>
+  <%- else -%>
+    <%- set cursor.value=text[cursor.i+1:] -%><%- set cursor.i=text|length -%>
+  <%- endif -%>
+<%- endmacro %>
+
+<% macro inline(text) -%>
+  <%- set text = text or '' -%>
+  <%- set c=namespace(i=0, value='') -%>
+  <%- for unused in range(text|length) -%>
+    <%- if c.i < text|length -%>
+      <%- set ch=text[c.i] -%>
+      <%- if ch in ['$','&'] -%>
+        <%- set start=c.i -%><%- set c.i=c.i+1 -%>
+        <%- if c.i < text|length and text[c.i]=='{' -%>
+          <<- group(text,c) ->>
+        <%- else -%>
+          <%- set word=namespace(end=c.i, done=false) -%>
+          <%- for j in range(c.i,text|length) -%>
+            <%- if not word.done and (text[j].isalnum() or text[j] in '_.:-') -%>
+              <%- set word.end=j+1 -%>
+            <%- else -%><%- set word.done=true -%><%- endif -%>
+          <%- endfor -%>
+          <%- set c.value=text[c.i:word.end] -%><%- set c.i=word.end -%>
+        <%- endif -%>
+        <%- if not c.value -%><<- ch|escape_text ->>
+        <%- elif ch=='$' -%>
+          <%- if format=='html' -%><span class="gloss"><< inline(c.value) >></span>
+          <%- else -%>\mygloss{ <<- inline(c.value) ->> }<% endif -%>
+        <%- elif format=='html' -%><span class="silent-gloss" hidden><< inline(c.value) >></span>
+        <%- else -%>\mysilentgloss{ <<- inline(c.value) ->> }<% endif -%>
+      <%- elif ch=='\\' -%>
+        <%- set start=c.i -%><%- set c.i=c.i+1 -%>
+        <%- set name=namespace(end=c.i, done=false) -%>
+        <%- for j in range(c.i,text|length) -%>
+          <%- if not name.done and text[j] in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' -%>
+            <%- set name.end=j+1 -%>
+          <%- else -%><%- set name.done=true -%><%- endif -%>
+        <%- endfor -%>
+        <%- set name=text[c.i:name.end] -%><%- set c.i=c.i+name|length -%>
+        <%- set a=namespace(values=[],done=false) -%>
+        <%- for unused2 in range(text|length-c.i) -%>
+          <%- if not a.done and c.i < text|length and text[c.i]=='{' -%>
+            <<- group(text,c) ->><%- set a.values=a.values+[c.value] -%>
+          <%- else -%><%- set a.done=true -%><%- endif -%>
+        <%- endfor -%>
+        <%- set expected=2 if name in double_args else 0 if name in zero_args else 1 -%>
+        <%- if name in languages and a.values|length >= expected -%>
+          <%- if format=='html' -%>
+            <<- languages[name] >> <i<% if name in ['ara','per','av'] %> dir="rtl"<% endif %>><% if name in ['pie','protrk','protung'] %>*<% endif %><< inline(a.values[0]) >></i><% if a.values|length > 1 %> <i><< inline(a.values[1]) >></i><% endif %>
+          <%- else -%>
+            <%- set texname='grc' if name=='grk' else name -%>
+            \my<< texname >>{ <<- inline(a.values[0]) ->> }<% if name in double_args %>{ <<- inline(a.values[1]) ->> }<% endif %>
+          <%- endif -%>
+        <%- elif name in zero_args -%>
+          <%- if format=='html' -%><<- zero_args[name] ->>
+          <%- else -%>\my<< name >>{}<% endif -%>
+        <%- elif name=='ex' and a.values|length >= 2 -%>
+          <%- if format=='html' -%><span class="sample-phrase"><i><< inline(a.values[0]) >></i> “<< inline(a.values[1]) >>”</span>
+          <%- else -%>\myex{ <<- inline(a.values[0]) ->> }{ <<- inline(a.values[1]) ->> }<% endif -%>
+        <%- elif name in single_args and a.values -%>
+          <%- if format=='latex' -%>
+            <%- set texname=name if name in ['emph','textit','textbf'] else 'my'+name -%>
+            \<< texname >>{ <<- inline(a.values[0]) ->> }
+          <%- elif name=='chem' -%>(atomic number << inline(a.values[0]) >>)
+          <%- elif name=='silentgloss' -%><span class="silent-gloss" hidden><< inline(a.values[0]) >></span>
+          <%- elif name=='gloss' -%><span class="gloss"><< inline(a.values[0]) >></span>
+          <%- elif name=='par' -%><span class="qualifier"><< inline(a.values[0]) >></span>
+          <%- elif name in ['field','reg'] -%><i>(<< inline(a.values[0]) >>)</i>
+          <%- elif name=='textbf' -%><b><< inline(a.values[0]) >></b>
+          <%- else -%><i><< inline(a.values[0]) >></i><% endif -%>
+        <%- else -%><<- text[start:c.i]|escape_text ->><% endif -%>
+        <%- if (name in languages or name in single_args or name in double_args or name in zero_args) and a.values|length > expected -%>
+          <%- for extra in a.values[expected:] -%><<- ('{'+extra+'}')|escape_text ->><%- endfor -%>
+        <%- endif -%>
+      <%- elif ch=='{' -%>
+        <<- group(text,c) ->><<- inline(c.value) ->>
+      <%- else -%>
+        <<- ch|escape_text ->><%- set c.i=c.i+1 -%>
+      <%- endif -%>
+    <%- endif -%>
+  <%- endfor -%>
+<%- endmacro %>
+
+<% set format='latex' %>
+\documentclass[12pt,twoside]{book}
+% Engine: XeLaTeX or LuaLaTeX recommended.
+\RequirePackage{xparse}
+\RequirePackage{fontspec}
+\RequirePackage{polyglossia}
+\RequirePackage{imakeidx}
+\RequirePackage{microtype}
+\RequirePackage{enumitem}
+\RequirePackage{etoolbox}
+\RequirePackage{xcolor}
+\RequirePackage{hyperref}
+\RequirePackage{geometry}
+\RequirePackage{fancyhdr}
+\RequirePackage{setspace}
+\RequirePackage{ragged2e}
+
+% ---------- Page/layout ----------
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  inner=0.75in,
+  outer=0.65in,
+  top=0.75in,
+  bottom=0.8in,
+  headheight=14pt
+}
+
+\setstretch{1.03}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.2em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\footnotesize\itshape \leftmark}
+\fancyhead[RO]{\footnotesize\itshape \rightmark}
+\fancyfoot[C]{\thepage}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black
+}
+
+% ---------- Fonts ----------
+% Replace these with your preferred installed fonts if needed.
+%\setmainfont{Libertinus Serif}
+%\newfontfamily\danetianfont{Libertinus Serif}
+%\newfontfamily\foreignfont{Libertinus Serif}
+%\newfontfamily\greekfont[Scale=MatchLowercase]{Libertinus Serif}
+%\newfontfamily\cyrillicfont{Libertinus Serif}
+\IfFontExistsTF{Amiri}{\newfontfamily\arabicfont[Script=Arabic]{Amiri}}{\newfontfamily\arabicfont[Script=Arabic]{DejaVu Sans}}
+\IfFontExistsTF{Noto Sans Avestan}{\newfontfamily\avestanfont[Script=Avestan]{Noto Sans Avestan}}{\newfontfamily\avestanfont{DejaVu Sans}}
+
+
+\IfFontExistsTF{Charis SIL}{\setmainfont{Charis SIL}}{\setmainfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\danetianfont{Charis SIL}}{\newfontfamily\danetianfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\foreignfont{Charis SIL}}{\newfontfamily\foreignfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\cyrillicfont{Charis SIL}}{\newfontfamily\cyrillicfont{DejaVu Serif}}
+\IfFontExistsTF{Gentium Plus}{\newfontfamily\greekfont{Gentium Plus}}{\newfontfamily\greekfont{DejaVu Serif}}
+
+\setdefaultlanguage{english}
+\setotherlanguages{greek,russian,arabic}
+
+% ---------- Index ----------
+\makeindex[name=dan,title=Danetian--English Dictionary]
+% Uncomment later if you generate a reverse index:
+% \makeindex[name=eng,title=English--Danetian Index]
+
+% ---------- Internal state ----------
+\newcounter{dictsense}
+\newif\ifinentry
+\inentryfalse
+
+\newcommand{\dictentrybreak}{%
+  \par\vspace{0.45\baselineskip}%
+}
+
+
+\newcounter{dictentry}
+
+\makeatletter
+\newcommand{\dictsensecount}[2]{%
+	\expandafter\gdef\csname dictsenses@#1\endcsname{#2}%
+	}
+
+\newcommand{\dictsavesenses}{%
+  \ifnum\value{dictentry}>0
+    \immediate\write\@auxout{%
+      \string\dictsensecount
+        {\arabic{dictentry}}{\arabic{dictsense}}%
+    }%
+  \fi
+}
+
+\newcommand{\dictreset}{%
+	\dictsavesenses
+	\stepcounter{dictentry}%
+	\setcounter{dictsense}{0}%
+}
+
+\newcommand{\dictsenselabel}[1]{%
+	\ifcsname dictsenses@\arabic{dictentry}\endcsname
+		\ifnum\csname dictsenses@\arabic{dictentry}\endcsname>1
+			\textbf{\makebox[1.8em][l]{\footnotesize #1.}}%
+		\fi
+	\fi
+}
+
+\makeatother
+\AtEndDocument{\dictsavesenses}
+
+% ---------- Entry macros ----------
+\NewDocumentCommand{\mykey}{m}{%
+  \ifinentry\dictentrybreak\fi
+  \inentrytrue
+  \dictreset
+  \markboth{#1}{#1}%
+  \index[dan]{#1}%
+  {\danetianfont\bfseries #1.}%
+}
+
+\NewDocumentCommand{\myexpr}{m}{%
+  \ifinentry\dictentrybreak\fi
+  \inentrytrue
+  \dictreset
+  \markboth{#1}{#1}%
+  \index[dan]{#1}%
+  {\danetianfont\bfseries #1}%
+  \nobreak\hspace{0.5em}%
+  {\footnotesize\scshape expr.}%
+}
+
+\NewDocumentCommand{\myety}{m}{%
+%  \par
+%  \hangindent=2em\hangafter=1
+%  \hspace*{1.2em}
+	{\footnotesize [\textit{#1}]}%
+}
+
+\NewDocumentCommand{\myinfl}{o m}{%
+%  \nobreak\hspace{0.6em}%
+%  {\footnotesize\color{gray}%
+%    \IfNoValueTF{#1}
+%      {[infl.\ #2]}
+%      {[infl.\ class~#1: #2]}%
+%  }%
+}
+
+\NewDocumentCommand{\mytyp}{m}{%
+  \nobreak%\hspace{0.6em}%
+  %{\footnotesize\scshape #1}%
+  \textit{#1.}
+}
+
+\NewDocumentCommand{\mylink}{m}{%
+%  \par
+%  \hangindent=2em\hangafter=1
+%  \hspace*{1.2em}{\footnotesize\itshape Cf. forms}~#1%
+}
+
+\NewDocumentCommand{\mydef}{o m}{%
+  \stepcounter{dictsense}%
+  \IfNoValueTF{#1}
+    {\dictsenselabel{\arabic{dictsense}}}
+    {\dictsenselabel{#1}}%
+  #2%
+}
+
+% ---------- Inline semantic/usage macros ----------
+\NewDocumentCommand{\mypar}{m}{%
+%  {\space\textnormal{\footnotesize\itshape #1}}%
+  \textit{#1}
+}
+
+\NewDocumentCommand{\myfield}{m}{%
+  {\footnotesize\textsc{#1}}\nobreakspace
+}
+
+\NewDocumentCommand{\myreg}{m}{%
+  {\footnotesize\textsc{#1}}\nobreakspace
+}
+
+\NewDocumentCommand{\mygloss}{m}{%
+  \emph{#1}%
+}
+
+\NewDocumentCommand{\mysilentgloss}{m}{%
+  {\color{gray}\emph{#1}}%
+}
+
+\NewDocumentCommand{\myex}{m m}{%
+%  \par
+%  \hspace*{2.7em}%
+  {\footnotesize\textquotedblleft #1\textquotedblright\enspace---\enspace#2}%
+}
+
+% ---------- Small utility tags ----------
+\NewDocumentCommand{\mycf}{}{%
+  \textit{cf.}\space
+}
+
+\NewDocumentCommand{\myetc}{}{%
+  \textit{etc.}%
+}
+
+\NewDocumentCommand{\myunknown}{}{%
+  \textit{unknown origin}%
+}
+
+\NewDocumentCommand{\mychem}{m}{%
+%  {\footnotesize\textsc{el.~#1}}%
+  \mypar{chemical element with atomic number~#1}
+}
+
+% ---------- Source-language / label tags ----------
+% 1-arg forms
+\NewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}~#1}}
+\NewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}~#1}}
+\NewDocumentCommand{\mydnt}{m}{{\danetianfont #1}}
+\NewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}~#1}}
+\NewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}~#1}}
+\NewDocumentCommand{\myger}{m}{{\foreignfont\textit{Ger.}~#1}}
+\NewDocumentCommand{\myita}{m}{{\foreignfont\textit{It.}~#1}}
+\NewDocumentCommand{\mybg}{m m}{{\foreignfont\textit{Bulg.}~#1~\emph{#2}}}
+\NewDocumentCommand{\mycat}{m}{{\foreignfont\textit{Cat.}~#1}}
+\NewDocumentCommand{\mydan}{m}{{\foreignfont\textit{Dan.}~#1}}
+\NewDocumentCommand{\mykyr}{m m}{{\foreignfont\textit{Kyrg.}~#1~\emph{#2}}}
+\NewDocumentCommand{\myono}{}{{\textit{onom.}}}
+\NewDocumentCommand{\myprotrk}{m}{{\foreignfont\textit{Proto-Turkic}~#1}}
+\NewDocumentCommand{\myprotung}{m}{{\foreignfont\textit{Proto-Tungusic}~#1}}
+\NewDocumentCommand{\mytur}{m}{{\foreignfont\textit{Tur.}~#1}}
+\NewDocumentCommand{\myara}{m m}{{\textit{Ar.}~\textarabic{#1}~\emph{#2}}}
+\NewDocumentCommand{\myper}{m m}{{\textit{Pers.}~\textarabic{#1}~\emph{#2}}}
+\NewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}~\textgreek{#1}~\emph{#2}}}
+\NewDocumentCommand{\myrus}{m m}{{\textit{Rus.}~{\cyrillicfont #1}~\emph{#2}}}
+\NewDocumentCommand{\myav}{m m}{{\textit{Av.}~{\avestanfont #1}~\emph{#2}}}
+
+% ---------- Fallbacks for future macros ----------
+% These are harmless placeholders so the document compiles even if your exporter
+% emits tags you have not styled yet.
+\NewDocumentCommand{\mysyn}{m}{%
+  \par\hangindent=2em\hangafter=1
+  \hspace*{1.2em}{\footnotesize\itshape Syn.}~#1%
+}
+
+\NewDocumentCommand{\mylinknote}{m}{%
+  \par\hangindent=2em\hangafter=1
+  \hspace*{1.2em}{\footnotesize\itshape Note}~#1%
+}
+
+
+\NewDocumentCommand{\mypp}{m}{}
+
+\newcommand{\LexeratSenseLabel}[1]{\textbf{\makebox[1.8em][l]{\footnotesize #1.}}}
+
+\begin{document}
+\frontmatter
+\begin{center}
+  {\Huge Danetian Dictionary}\par
+  \vspace{1em}
+  {\large Danetian--English}
+\end{center}
+\tableofcontents
+\mainmatter
+\chapter*{Lexicon}
+\addcontentsline{toc}{chapter}{Lexicon}
+\twocolumn
+\RaggedRight
+<% for entry in entries %>
+\mykey{<< entry.forms | join(', ') | escape_text >>} <% if entry.ety %>\myety{<< inline(entry.ety) >>} <% endif %><% for definition in entry.definitions %><% if definition.typ and (loop.first or definition.typ != entry.definitions[loop.index0-1].typ) %>\mytyp{<< definition.typ | escape_text >>} <% endif %><% if entry.definitions|length > 1 %>\LexeratSenseLabel{<< loop.index >>}<% endif %><< inline(definition.content) >><% if not loop.last %>; <% endif %><% endfor %>
+<% endfor %>
+\backmatter
+\printindex[dan]
+\end{document}
