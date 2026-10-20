@@ -1,6 +1,6 @@
-# Lexerat starter
+# Lexerat
 
-A parser and extensible interpreter for the Lexerat lexicon markup language.
+A conlang lexicon parser.
 
 
 
