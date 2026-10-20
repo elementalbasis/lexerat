@@ -42,7 +42,11 @@ class Parser:
                 buf.clear()
         while self.i < len(self.source):
             char = self.source[self.i]
-            if char == '\\' and self.i + 1 < len(self.source) and self.source[self.i+1] in '@(),\\':
+            if char == '%':
+                end = self.source.find('\n', self.i)
+                self.i = len(self.source) if end == -1 else end + 1
+                continue
+            if char == '\\' and self.i + 1 < len(self.source) and self.source[self.i+1] in '@(),\\%':
                 buf.append(self.source[self.i+1])
                 self.i += 2
                 continue
