@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 import json
 import re
+import unicodedata
 
 
 
@@ -90,7 +91,7 @@ class Parser:
         args = []
         while True:
             args.append(''.join(
-                self.content(True, split_commas=(name == 'key'))
+                self.content(True, split_commas=(name in {'key', 'link'}))
                 ).strip())
             if self.i >= len(self.source):
                 raise self.error(f'unclosed @{name}(...)', start)
@@ -117,6 +118,10 @@ class Entry:
     forms: list[str]
     ety: str | None = None
     definitions: list[Definition] = field(default_factory=list)
+    kind: str = 'lemma'
+    id: str = ''
+    links: list[str] = field(default_factory=list)
+    expressions: list[Entry] = field(default_factory=list)
 
     @property
     def lemma(self):
@@ -128,10 +133,11 @@ class Context:
     entries: list[Entry] = field(default_factory=list)
     entry: Entry | None = None
     state: dict = field(default_factory=dict)
+    pending_links: list[tuple[Entry, Command]] = field(default_factory=list)
 
     def require_entry(self):
         if self.entry is None:
-            raise ValueError('command must follow @key(...)')
+            raise ValueError('command must follow @key(...) or @expr(...)')
         return self.entry
 
     def add_definition(self, content):
@@ -145,6 +151,8 @@ class Interpreter:
                 'ety': self.ety,
                 'typ': self.typ,
                 'def': self.definition,
+                'expr': self.expression,
+                'link': self.link,
                 }
 
     def command(self, name):
@@ -163,9 +171,48 @@ class Interpreter:
         forms = list(call.args)
         if any(not form for form in forms):
             raise ValueError('@key requires nonempty forms')
-        ctx.entry = Entry(forms)
+        ctx.entry = Entry(forms, id=f'entry-{len(ctx.entries) + 1}')
         ctx.entries.append(ctx.entry)
         ctx.state = {}
+
+    def expression(self, ctx, call):
+        self.arity(call, 1)
+        if not call.args[0]:
+            raise ValueError('@expr requires a nonempty expression')
+        ctx.entry = Entry(list(call.args), kind='expression',
+                          id=f'expr-{len(ctx.entries) + 1}')
+        ctx.entries.append(ctx.entry)
+        ctx.state = {}
+
+    def link(self, ctx, call):
+        entry = ctx.require_entry()
+        if entry.kind != 'expression':
+            raise ValueError('@link must belong to an @expr entry')
+        if any(not target for target in call.args):
+            raise ValueError('@link requires nonempty lemma names')
+        ctx.pending_links.append((entry, call))
+
+    @staticmethod
+    def resolve_links(ctx, parser):
+        # Resolve only primary lemmas, after every input has been interpreted.
+        # Links store names; parents store references to expressions, so no cycles.
+        def normalized(text):
+            return unicodedata.normalize('NFC', text.strip())
+        by_lemma = {}
+        for entry in ctx.entries:
+            if entry.kind == 'lemma':
+                by_lemma.setdefault(normalized(entry.lemma), []).append(entry)
+        for expression, call in ctx.pending_links:
+            for name in call.args:
+                targets = by_lemma.get(normalized(name), [])
+                if not targets:
+                    raise parser.error(f'@link target {name!r} has no @key entry', call.offset)
+                if len(targets) > 1:
+                    raise parser.error(f'@link target {name!r} is ambiguous: multiple @key entries', call.offset)
+                target = targets[0]
+                if target.lemma not in expression.links:
+                    expression.links.append(target.lemma)
+                    target.expressions.append(expression)
 
     def ety(self, ctx, call):
         self.arity(call, 1)
@@ -194,13 +241,15 @@ class Interpreter:
             try:
                 if node.name not in self.commands:
                     raise ValueError(f'unknown entry command @{node.name}')
-                if node.option is not None:
-                    raise ValueError(f'@{node.name} does not accept a bracket option')
                 self.commands[node.name](ctx, node)
             except ValueError as exc:
                 raise parser.error(str(exc), node.offset) from exc
+        self.resolve_links(ctx, parser)
         if sort:
-            ctx.entries.sort(key=sort_key or (lambda e: e.lemma.casefold()))
+            key = sort_key or (lambda e: e.lemma.casefold())
+            ctx.entries.sort(key=key)
+            for entry in ctx.entries:
+                entry.expressions.sort(key=key)
         return ctx.entries
 
 
@@ -267,3 +316,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

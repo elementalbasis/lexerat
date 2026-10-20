@@ -107,6 +107,16 @@
   {%- endfor -%}
 {%- endmacro %}
 
+{% macro senses(item) -%}
+{%- for definition in item.definitions -%}
+{%- if definition.typ and (loop.first or definition.typ != item.definitions[loop.index0-1].typ) -%}
+\mytyp{{ '{' }}{{ definition.typ | latex_escape }}} {{ ' ' }}
+{%- endif -%}
+{%- if item.definitions|length > 1 -%}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif -%}
+{{- inline(definition.content) -}}{% if not loop.last %}; {% endif %}
+{%- endfor -%}
+{%- endmacro %}
+
 {% set format='latex' %}
 {% raw %}\documentclass[12pt,twoside]{book}
 % Engine: XeLaTeX or LuaLaTeX recommended.
@@ -364,6 +374,16 @@
 
 \newcommand{\LexeratSenseLabel}[1]{\textbf{\makebox[1.8em][l]{\footnotesize #1.}}}
 
+% Embedded expressions do not reset the lemma's sense counter or running header.
+\NewDocumentCommand{\LexeratLinkedExpression}{m m}{%
+  \par\begingroup
+  \hangindent=1.2em\hangafter=1
+  \noindent\textbullet\enspace{\danetianfont\bfseries #1}%
+  \nobreak\hspace{0.5em}{\footnotesize\scshape expr.}\enspace
+  #2\par\endgroup
+}
+
+
 \begin{document}
 \frontmatter
 \begin{center}
@@ -378,8 +398,12 @@
 \twocolumn
 \RaggedRight
 {% endraw %}{% for entry in entries %}
-\mykey{{ '{' }}{{ entry.forms | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{% for definition in entry.definitions %}{% if definition.typ and (loop.first or definition.typ != entry.definitions[loop.index0-1].typ) %}\mytyp{{ '{' }}{{ definition.typ | latex_escape }}} {% endif %}{% if entry.definitions|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{{ inline(definition.content) }}{% if not loop.last %}; {% endif %}{% endfor %}
+{% if entry.kind == 'expression' %}\myexpr{% else %}\mykey{% endif %}{{ '{' }}{{ entry.forms | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}
+{% for expression in entry.expressions %}
+\LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}
+{% endfor %}
 {% endfor %}
 \backmatter
 \printindex[dan]
 \end{document}
+

@@ -107,17 +107,32 @@
   {%- endfor -%}
 {%- endmacro %}
 
-{# HTML fragment: same article/classes as the supplied lexicon.html. #}
+{# HTML numbers every sense, including expressions with just one definition. #}
 {% set format='html' %}
-{% for entry in entries %}
-{% set entry_id='entry-' ~ loop.index %}
-<article class="entry" id="{{ entry_id }}">
-<h1 class="lemma">{{ entry.forms | join(', ') }}</h1>
-{% if entry.ety %}<p class="etymology">{{ inline(entry.ety) }}</p>{% endif %}
+{% macro senses(item, prefix) -%}
 <section class="sense-block"><ol>
-{% for definition in entry.definitions %}
-<li id="{{ entry_id }}-sense-{{ loop.index }}" value="{{ loop.index }}">{% if definition.typ %}<span class="pos">{{ definition.typ }}.</span> {% endif %}{{ inline(definition.content) }}</li>
+{% for definition in item.definitions %}
+<li id="{{ prefix | html_escape }}-sense-{{ loop.index }}" value="{{ loop.index }}">{% if definition.typ %}<span class="pos">{{ definition.typ | html_escape }}.</span> {% endif %}{{ inline(definition.content) }}</li>
 {% endfor %}
 </ol></section>
+{%- endmacro %}
+{% for entry in entries %}
+<article class="entry{% if entry.kind == 'expression' %} expression-entry{% endif %}" id="{{ entry.id | html_escape }}">
+<h1 class="lemma">{{ entry.forms | join(', ') | html_escape }}</h1>
+{% if entry.kind == 'expression' %}<p class="pos">expression</p>{% endif %}
+{% if entry.ety %}<p class="etymology">{{ inline(entry.ety) }}</p>{% endif %}
+{{ senses(entry, entry.id) }}
+{% if entry.expressions %}
+<section class="expr-block">
+<h3>Expressions</h3>
+{% for expression in entry.expressions %}
+<div class="linked-expression" id="{{ (entry.id ~ '-' ~ expression.id) | html_escape }}">
+<h3 class="expr-head"><a href="#{{ expression.id | html_escape }}">{{ expression.forms | join(', ') | html_escape }}</a></h3>
+{% if expression.ety %}<p class="etymology">{{ inline(expression.ety) }}</p>{% endif %}
+{{ senses(expression, entry.id ~ '-' ~ expression.id) }}
+</div>
+{% endfor %}
+</section>
+{% endif %}
 </article>
 {% endfor %}
