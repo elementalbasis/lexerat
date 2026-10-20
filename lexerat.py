@@ -236,13 +236,16 @@ def render(entries, template_path, *, target='html', options=None):
 
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument('source', type=Path)
+    cli.add_argument('sources', type=Path, nargs='+')
     cli.add_argument('--template', type=Path)
     cli.add_argument('--target', choices=['html', 'latex'], default='latex')
     cli.add_argument('-o', '--output', type=Path)
     args = cli.parse_args()
     try:
-        entries = parse(args.source.read_text(encoding='utf-8'), str(args.source))
+        source = '\n'.join(
+                path.read_text(encoding='utf-8') for path in args.sources
+                )
+        entries = parse(source, '<combined inputs>')
         if args.template:
             result = render(entries, args.template, target=args.target)
         else:
