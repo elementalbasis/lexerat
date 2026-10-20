@@ -208,37 +208,44 @@ def parse(source, filename='<string>', **kwargs):
     return Interpreter().interpret(source, filename, **kwargs)
 
 
-def render(entries, template_path, *, target='html', options=None):
-    """Render plain string fields using a trusted local Jinja2 template."""
+def render(entries, template_path, *, options=None):
     from jinja2 import Environment, FileSystemLoader, StrictUndefined
     from markupsafe import escape
-    if target not in ('html', 'latex'):
-        raise ValueError('target must be html or latex')
-    path = Path(template_path)
-    settings = dict(loader=FileSystemLoader(str(path.resolve().parent)),
-                    undefined=StrictUndefined, autoescape=(target == 'html'),
-                    keep_trailing_newline=True)
-    if target == 'latex':
-        settings.update(variable_start_string='<<', variable_end_string='>>',
-                        block_start_string='<%', block_end_string='%>',
-                        comment_start_string='<#', comment_end_string='#>')
-    env = Environment(**settings)
-    latex_chars = {'\\': r'\textbackslash{}', '{': r'\{', '}': r'\}',
-                   '$': r'\$', '&': r'\&', '#': r'\#', '%': r'\%',
-                   '_': r'\_', '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
-    def escaped(text):
-        return escape(text) if target == 'html' else ''.join(latex_chars.get(c, c) for c in text)
-    # Keep the original filter name so existing entry templates still work.
-    env.filters['inline'] = lambda text: escaped(text or '')
-    env.filters['escape_text'] = escaped
-    return env.get_template(path.name).render(entries=entries, options=options or {})
 
+    path = Path(template_path)
+    env = Environment(
+        loader=FileSystemLoader(str(path.resolve().parent)),
+        undefined=StrictUndefined,
+        autoescape=False,
+        keep_trailing_newline=True,
+    )
+
+    latex_chars = {
+        '\\': r'\textbackslash{}',
+        '{': r'\{', '}': r'\}',
+        '$': r'\$', '&': r'\&',
+        '#': r'\#', '%': r'\%',
+        '_': r'\_', '~': r'\textasciitilde{}',
+        '^': r'\textasciicircum{}',
+    }
+
+    env.filters['html_escape'] = lambda text: escape(
+        '' if text is None else str(text)
+    )
+    env.filters['latex_escape'] = lambda text: ''.join(
+        latex_chars.get(c, c)
+        for c in ('' if text is None else str(text))
+    )
+
+    return env.get_template(path.name).render(
+        entries=entries,
+        options=options or {},
+    )
 
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('sources', type=Path, nargs='+')
     cli.add_argument('--template', type=Path)
-    cli.add_argument('--target', choices=['html', 'latex'], default='latex')
     cli.add_argument('-o', '--output', type=Path)
     args = cli.parse_args()
     try:
@@ -247,7 +254,7 @@ def main():
                 )
         entries = parse(source, '<combined inputs>')
         if args.template:
-            result = render(entries, args.template, target=args.target)
+            result = render(entries, args.template)
         else:
             result = json.dumps([asdict(e) for e in entries], ensure_ascii=False, indent=2)
     except (ValueError, OSError) as exc:

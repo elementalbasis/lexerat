@@ -48,7 +48,7 @@
           {%- endfor -%}
           {%- set c.value=text[c.i:word.end] -%}{%- set c.i=word.end -%}
         {%- endif -%}
-        {%- if not c.value -%}{{- ch|escape_text -}}
+        {%- if not c.value -%}{{- ch|html_escape -}}
         {%- elif ch=='$' -%}
           {%- if format=='html' -%}<span class="gloss">{{ inline(c.value) }}</span>
           {%- else -%}\mygloss{ {{- inline(c.value) -}} }{% endif -%}
@@ -94,14 +94,14 @@
           {%- elif name in ['field','reg'] -%}<i>({{ inline(a.values[0]) }})</i>
           {%- elif name=='textbf' -%}<b>{{ inline(a.values[0]) }}</b>
           {%- else -%}<i>{{ inline(a.values[0]) }}</i>{% endif -%}
-        {%- else -%}{{- text[start:c.i]|escape_text -}}{% endif -%}
+        {%- else -%}{{- text[start:c.i]|html_escape -}}{% endif -%}
         {%- if (name in languages or name in single_args or name in double_args or name in zero_args) and a.values|length > expected -%}
-          {%- for extra in a.values[expected:] -%}{{- ('{'+extra+'}')|escape_text -}}{%- endfor -%}
+          {%- for extra in a.values[expected:] -%}{{- ('{'+extra+'}')|html_escape -}}{%- endfor -%}
         {%- endif -%}
       {%- elif ch=='{' -%}
         {{- group(text,c) -}}{{- inline(c.value) -}}
       {%- else -%}
-        {{- ch|escape_text -}}{%- set c.i=c.i+1 -%}
+        {{- ch|html_escape -}}{%- set c.i=c.i+1 -%}
       {%- endif -%}
     {%- endif -%}
   {%- endfor -%}
@@ -114,9 +114,9 @@
 <article class="entry" id="{{ entry_id }}">
 <h1 class="lemma">{{ entry.forms | join(', ') }}</h1>
 {% if entry.ety %}<p class="etymology">{{ inline(entry.ety) }}</p>{% endif %}
-<section class="sense-block"><ol{% if entry.definitions|length == 1 %} class="single-sense" style="list-style: none; padding-inline-start: 0"{% endif %}>
+<section class="sense-block"><ol>
 {% for definition in entry.definitions %}
-<li id="{{ entry_id }}-sense-{{ loop.index }}" value="{{ loop.index }}">{% if definition.typ %}<span class="pos">{{ definition.typ }}</span> {% endif %}{{ inline(definition.content) }}</li>
+<li id="{{ entry_id }}-sense-{{ loop.index }}" value="{{ loop.index }}">{% if definition.typ %}<span class="pos">{{ definition.typ }}.</span> {% endif %}{{ inline(definition.content) }}</li>
 {% endfor %}
 </ol></section>
 </article>
