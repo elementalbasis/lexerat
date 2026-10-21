@@ -107,23 +107,31 @@
   {%- endfor -%}
 {%- endmacro %}
 
+{# Every sense keeps its own captured typ. Typ changes introduce a new block. #}
+{% macro stop(text) -%}
+  {%- if text.rstrip().rstrip('}').rstrip()[-1:] not in ['.', '!', '?', ';', ':'] -%}\unskip.{%- endif -%}
+{%- endmacro %}
 {% macro senses(item) -%}
 {%- for definition in item.definitions -%}
+{%- if not loop.first -%}
+  {%- if definition.typ != item.definitions[loop.index0-1].typ -%}\RaeTypeDivider{}
+  {%- else -%}\RaeSenseDivider{}
+  {%- endif -%}
+{%- endif -%}
 {%- if definition.typ and (loop.first or definition.typ != item.definitions[loop.index0-1].typ) -%}
 \mytyp{{ '{' }}{{ definition.typ | latex_escape }}} {{ ' ' }}
 {%- endif -%}
 {%- if item.definitions|length > 1 -%}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif -%}
-{{- inline(definition.content) -}}{% if not loop.last %}; {% endif %}
+{{- inline(definition.content) -}}{{- stop(definition.content) -}}
 {%- endfor -%}
 {%- endmacro %}
 
 {% set format='latex' %}
-{% raw %}\documentclass[12pt,twoside]{book}
+{% raw %}\documentclass[10pt,twoside]{book}
 % Engine: XeLaTeX or LuaLaTeX recommended.
 \RequirePackage{xparse}
 \RequirePackage{fontspec}
 \RequirePackage{polyglossia}
-\RequirePackage{imakeidx}
 \RequirePackage{microtype}
 \RequirePackage{enumitem}
 \RequirePackage{etoolbox}
@@ -145,9 +153,9 @@
   headheight=14pt
 }
 
-\setstretch{1.03}
+\setstretch{1.0}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.2em}
+\setlength{\parskip}{0pt}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -182,18 +190,13 @@
 \setdefaultlanguage{english}
 \setotherlanguages{greek,russian,arabic}
 
-% ---------- Index ----------
-\makeindex[name=dan,title=Danetian--English Dictionary]
-% Uncomment later if you generate a reverse index:
-% \makeindex[name=eng,title=English--Danetian Index]
-
 % ---------- Internal state ----------
 \newcounter{dictsense}
 \newif\ifinentry
 \inentryfalse
 
 \newcommand{\dictentrybreak}{%
-  \par\vspace{0.45\baselineskip}%
+  \par\addvspace{0.22\baselineskip}%
 }
 
 
@@ -222,7 +225,7 @@
 \newcommand{\dictsenselabel}[1]{%
 	\ifcsname dictsenses@\arabic{dictentry}\endcsname
 		\ifnum\csname dictsenses@\arabic{dictentry}\endcsname>1
-			\textbf{\makebox[1.8em][l]{\footnotesize #1.}}%
+			\textbf{#1.}\nobreak\hspace{0.3em}%
 		\fi
 	\fi
 }
@@ -236,7 +239,6 @@
   \inentrytrue
   \dictreset
   \markboth{#1}{#1}%
-  \index[dan]{#1}%
   {\danetianfont\bfseries #1.}%
 }
 
@@ -245,7 +247,6 @@
   \inentrytrue
   \dictreset
   \markboth{#1}{#1}%
-  \index[dan]{#1}%
   {\danetianfont\bfseries #1}%
   \nobreak\hspace{0.5em}%
   {\footnotesize\scshape expr.}%
@@ -372,7 +373,7 @@
 
 \NewDocumentCommand{\mypp}{m}{}
 
-\newcommand{\LexeratSenseLabel}[1]{\textbf{\makebox[1.8em][l]{\footnotesize #1.}}}
+\newcommand{\LexeratSenseLabel}[1]{\textbf{#1.}\nobreak\hspace{0.3em}}
 
 % Embedded expressions do not reset the lemma's sense counter or running header.
 \NewDocumentCommand{\LexeratLinkedExpression}{m m}{%
@@ -384,26 +385,114 @@
 }
 
 
+% Reverse headings do not reset the Danetian sense counters.
+\NewDocumentCommand{\LexeratReverseHead}{m}{%
+  \par\addvspace{0.65\baselineskip}%
+  \markboth{#1}{#1}%
+  \noindent\textbf{\textit{#1}}\par\nopagebreak[4]%
+}
+\newenvironment{LexeratReverseMatches}{%
+  \begin{itemize}[label=\(\circ\),leftmargin=1.1em,labelsep=0.35em,
+    itemsep=0.15em,parsep=0pt,topsep=0.15em,partopsep=0pt]%
+}{\end{itemize}}
+
+
+% ---------- RAE-inspired compact typography ----------
+% The RAE dossier uses National and Tiempos Text. Retain Charis SIL for the
+% multilingual body, and use an available sans serif for the headwords.
+\newfontfamily\lemmafont{DejaVu Sans}
+\setlength{\columnsep}{1.4em}
+\emergencystretch=2em
+\tolerance=1800
+\widowpenalty=10000
+\clubpenalty=10000
+\newcommand{\RaeSenseDivider}{\unskip\hspace{0.25em}\textbar\kern-0.1em\textbar\hspace{0.25em}}
+\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\textbullet\hspace{0.4em}}
+\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{0.65ex}{0.65ex}\hspace{0.4em}}
+% Only the primary form uses the heading font; other forms match reverse matches.
+\RenewDocumentCommand{\mykey}{m m}{%
+  \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  {\lemmafont\bfseries #1\ifstrempty{#2}{.}{,}}%
+  \ifstrempty{#2}{}{\space{\danetianfont\bfseries #2.}}%
+  \nobreak\hspace{0.35em}\ignorespaces
+}
+\RenewDocumentCommand{\myexpr}{m}{%
+  \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  {\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
+}
+\RenewDocumentCommand{\myety}{m}{{\small (#1)}\space\ignorespaces}
+\RenewDocumentCommand{\mytyp}{m}{#1.\space\ignorespaces}
+\RenewDocumentCommand{\mygloss}{m}{#1}
+\RenewDocumentCommand{\mypar}{m}{\textit{#1}}
+\RenewDocumentCommand{\mychem}{m}{\mypar{chemical element with atomic number #1}}
+% Language labels and transliterations may wrap in narrow dictionary columns.
+\RenewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}\space #1}}
+\RenewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}\space #1}}
+\RenewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}\space #1}}
+\RenewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}\space #1}}
+\RenewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}\space\textgreek{#1}\space\emph{#2}}}
+\RenewDocumentCommand{\myrus}{m m}{{\textit{Rus.}\space{\cyrillicfont #1}\space\emph{#2}}}
+
+\RenewDocumentCommand{\mysilentgloss}{m}{}
+\RenewDocumentCommand{\myex}{m m}{\textit{#1}\enspace\textquotedblleft #2\textquotedblright}
+\RenewDocumentCommand{\myfield}{m}{\textit{#1.}\nobreakspace}
+\RenewDocumentCommand{\myreg}{m}{\textit{#1.}\nobreakspace}
+\RenewDocumentCommand{\LexeratLinkedExpression}{m m}{%
+  {\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}#2%
+}
+\RenewDocumentCommand{\LexeratReverseHead}{m}{%
+  \par\addvspace{0.22\baselineskip}%
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  \noindent{\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
+}
+
 \begin{document}
 \frontmatter
 \begin{center}
   {\Huge Danetian Dictionary}\par
   \vspace{1em}
-  {\large Danetian--English}
+  {\large Danetian--English / English--Danetian}
 \end{center}
 \tableofcontents
 \mainmatter
-\chapter*{Lexicon}
-\addcontentsline{toc}{chapter}{Lexicon}
-\twocolumn
-\RaggedRight
+\twocolumn[{%
+  \phantomsection
+  \addcontentsline{toc}{chapter}{Danetian--English}%
+  {\normalfont\huge\bfseries Danetian--English\par}%
+  \vspace{1em}%
+}]
+\markboth{Danetian--English}{Danetian--English}
+\justifying
 {% endraw %}{% for entry in entries %}
-{% if entry.kind == 'expression' %}\myexpr{% else %}\mykey{% endif %}{{ '{' }}{{ entry.forms | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}
-{% for expression in entry.expressions %}
-\LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}
+{% if entry.kind == 'expression' %}\myexpr{{ '{' }}{{ entry.forms | join(', ') | latex_escape }}}{% else %}\mykey{{ '{' }}{{ entry.lemma | latex_escape }}}{{ '{' }}{{ entry.forms[1:] | join(', ') | latex_escape }}}{% endif %} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}{% for expression in entry.expressions %}{% if loop.first %}\RaeExpressionDivider{}{% else %}\RaeSenseDivider{}{% endif %}
+\LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}{% endfor %}
 {% endfor %}
+{% if reverse_index %}
+{% raw %}
+\cleardoublepage
+\twocolumn[{%
+  \phantomsection
+  \addcontentsline{toc}{chapter}{English--Danetian}%
+  {\normalfont\huge\bfseries English--Danetian\par}%
+  \vspace{1em}%
+}]
+\markboth{English--Danetian}{English--Danetian}
+\begingroup
+% Newmark-style matches: the complete definition, its own type, then headword.
+% Gloss markers identify lookup words; they need not italicize the definition.
+\renewcommand{\mygloss}[1]{#1}
+\renewcommand{\mysilentgloss}[1]{}
+{% endraw %}
+{% for keyword, matches in reverse_index.items() %}
+\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}\RaeSenseDivider{}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{{ inline(match.definition.content) }}{{ stop(match.definition.content) }} {% if match.definition.typ %}\mytyp{{ '{' }}{{ match.definition.typ | latex_escape }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}}{% if match.entry.kind == 'expression' %}\enspace{\footnotesize\scshape expr.}{% endif %}{% endfor %}
 {% endfor %}
-\backmatter
-\printindex[dan]
+\endgroup
+{% endif %}
 \end{document}
+
 
