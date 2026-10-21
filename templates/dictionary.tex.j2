@@ -130,6 +130,7 @@
 {% raw %}\documentclass[10pt,twoside]{book}
 % Engine: XeLaTeX or LuaLaTeX recommended.
 \RequirePackage{xparse}
+\RequirePackage{graphicx}
 \RequirePackage{fontspec}
 \RequirePackage{polyglossia}
 \RequirePackage{microtype}
@@ -336,21 +337,21 @@
 
 % ---------- Source-language / label tags ----------
 % 1-arg forms
-\NewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}~#1}}
-\NewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}~#1}}
-\NewDocumentCommand{\mydnt}{m}{{\danetianfont #1}}
-\NewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}~#1}}
-\NewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}~#1}}
-\NewDocumentCommand{\myger}{m}{{\foreignfont\textit{Ger.}~#1}}
-\NewDocumentCommand{\myita}{m}{{\foreignfont\textit{It.}~#1}}
+\NewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.\space #1}}}
+\NewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE\space #1}}}
+\NewDocumentCommand{\mydnt}{m}{{\danetianfont\textit{#1}}}
+\NewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.\space #1}}}
+\NewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.\space #1}}}
+\NewDocumentCommand{\myger}{m}{{\foreignfont\textit{Ger.\space #1}}}
+\NewDocumentCommand{\myita}{m}{{\foreignfont\textit{It.\space #1}}}
 \NewDocumentCommand{\mybg}{m m}{{\foreignfont\textit{Bulg.}~#1~\emph{#2}}}
-\NewDocumentCommand{\mycat}{m}{{\foreignfont\textit{Cat.}~#1}}
-\NewDocumentCommand{\mydan}{m}{{\foreignfont\textit{Dan.}~#1}}
+\NewDocumentCommand{\mycat}{m}{{\foreignfont\textit{Cat.\space #1}}}
+\NewDocumentCommand{\mydan}{m}{{\foreignfont\textit{Dan.\space #1}}}
 \NewDocumentCommand{\mykyr}{m m}{{\foreignfont\textit{Kyrg.}~#1~\emph{#2}}}
 \NewDocumentCommand{\myono}{}{{\textit{onom.}}}
-\NewDocumentCommand{\myprotrk}{m}{{\foreignfont\textit{Proto-Turkic}~#1}}
-\NewDocumentCommand{\myprotung}{m}{{\foreignfont\textit{Proto-Tungusic}~#1}}
-\NewDocumentCommand{\mytur}{m}{{\foreignfont\textit{Tur.}~#1}}
+\NewDocumentCommand{\myprotrk}{m}{{\foreignfont\textit{Proto-Turkic\space #1}}}
+\NewDocumentCommand{\myprotung}{m}{{\foreignfont\textit{Proto-Tungusic\space #1}}}
+\NewDocumentCommand{\mytur}{m}{{\foreignfont\textit{Tur.\space #1}}}
 \NewDocumentCommand{\myara}{m m}{{\textit{Ar.}~\textarabic{#1}~\emph{#2}}}
 \NewDocumentCommand{\myper}{m m}{{\textit{Pers.}~\textarabic{#1}~\emph{#2}}}
 \NewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}~\textgreek{#1}~\emph{#2}}}
@@ -407,8 +408,8 @@
 \widowpenalty=10000
 \clubpenalty=10000
 \newcommand{\RaeSenseDivider}{\unskip\hspace{0.25em}\textbar\kern-0.1em\textbar\hspace{0.25em}}
-\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\textbullet\hspace{0.4em}}
-\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{0.65ex}{0.65ex}\hspace{0.4em}}
+\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\rotatebox{45}{\rule{0.8ex}{0.8ex}}\hspace{0.4em}}
+\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{1ex}{1ex}\hspace{0.4em}}
 % Only the primary form uses the heading font; other forms match reverse matches.
 \RenewDocumentCommand{\mykey}{m m}{%
   \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
@@ -422,7 +423,7 @@
   \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
   \hangindent=0.75em\hangafter=1\noindent
   \markboth{#1}{#1}%
-  {\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
+  {\danetianfont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
 }
 \RenewDocumentCommand{\myety}{m}{{\small (#1)}\space\ignorespaces}
 \RenewDocumentCommand{\mytyp}{m}{#1.\space\ignorespaces}
@@ -430,10 +431,10 @@
 \RenewDocumentCommand{\mypar}{m}{\textit{#1}}
 \RenewDocumentCommand{\mychem}{m}{\mypar{chemical element with atomic number #1}}
 % Language labels and transliterations may wrap in narrow dictionary columns.
-\RenewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}\space #1}}
-\RenewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}\space #1}}
-\RenewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}\space #1}}
-\RenewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}\space #1}}
+\RenewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.\space #1}}}
+\RenewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE\space #1}}}
+\RenewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.\space #1}}}
+\RenewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.\space #1}}}
 \RenewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}\space\textgreek{#1}\space\emph{#2}}}
 \RenewDocumentCommand{\myrus}{m m}{{\textit{Rus.}\space{\cyrillicfont #1}\space\emph{#2}}}
 
@@ -442,7 +443,7 @@
 \RenewDocumentCommand{\myfield}{m}{\textit{#1.}\nobreakspace}
 \RenewDocumentCommand{\myreg}{m}{\textit{#1.}\nobreakspace}
 \RenewDocumentCommand{\LexeratLinkedExpression}{m m}{%
-  {\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}#2%
+  {\danetianfont\bfseries #1.}\nobreak\hspace{0.35em}#2%
 }
 \RenewDocumentCommand{\LexeratReverseHead}{m}{%
   \par\addvspace{0.22\baselineskip}%
