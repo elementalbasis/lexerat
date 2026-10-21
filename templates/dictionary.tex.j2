@@ -169,7 +169,7 @@
 {%- endmacro %}
 
 {% set format='latex' %}
-{% raw %}\documentclass[10pt,twoside]{book}
+{% raw %}\documentclass[10pt,oneside,openany]{book}
 % Engine: XeLaTeX or LuaLaTeX recommended.
 \RequirePackage{xparse}
 \RequirePackage{graphicx}
@@ -184,13 +184,14 @@
 \RequirePackage{fancyhdr}
 \RequirePackage{setspace}
 \RequirePackage{ragged2e}
+\RequirePackage{multicol}
 
 % ---------- Page/layout ----------
 \geometry{
   paperwidth=6in,
   paperheight=9in,
-  inner=0.75in,
-  outer=0.65in,
+  left=0.7in,
+  right=0.7in,
   top=0.75in,
   bottom=0.8in,
   headheight=14pt
@@ -202,8 +203,9 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[LE]{\footnotesize\itshape \leftmark}
-\fancyhead[RO]{\footnotesize\itshape \rightmark}
+% rightmark is the first entry mark; leftmark is the last (also in two columns).
+\fancyhead[L]{\footnotesize\itshape \rightmark}
+\fancyhead[R]{\footnotesize\itshape \leftmark}
 \fancyfoot[C]{\thepage}
 
 \hypersetup{
@@ -374,7 +376,7 @@
 
 \NewDocumentCommand{\mychem}{m}{%
 %  {\footnotesize\textsc{el.~#1}}%
-  \mypar{chemical element with atomic number~#1}
+  \mypar{chem.\nobreakspace elem.\nobreakspace #1}
 }
 
 % ---------- Source-language / label tags ----------
@@ -445,13 +447,18 @@
 % multilingual body, and use an available sans serif for the headwords.
 \newfontfamily\lemmafont{DejaVu Sans}
 \setlength{\columnsep}{1.4em}
+\setlength{\multicolsep}{0pt}
+\raggedcolumns
 \emergencystretch=2em
 \tolerance=1800
 \widowpenalty=10000
 \clubpenalty=10000
-\newcommand{\RaeSenseDivider}{\unskip\hspace{0.25em}\textbar\kern-0.1em\textbar\nobreak\hspace{0.25em}}
-\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\rotatebox{45}{\rule{0.8ex}{0.8ex}}\hspace{0.4em}}
-\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{1ex}{1ex}\hspace{0.4em}}
+% Plain spacing between same-type senses; hollow diamond at type changes.
+\newcommand{\RaeSenseDivider}{\unskip\hspace{0.4em}}
+\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\raisebox{\depth}{\resizebox*{!}{1ex}{\ensuremath{\diamond}}}\nobreak\hspace{0.4em}}
+% Filled square opens the expressions section; filled diamonds separate phrases.
+\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{1ex}{1ex}\nobreak\hspace{0.4em}}
+\newcommand{\RaeBetweenExpressions}{\unskip\hspace{0.4em}\rotatebox{45}{\rule{0.8ex}{0.8ex}}\nobreak\hspace{0.4em}}
 % Only the primary form uses the heading font; other forms match reverse matches.
 \RenewDocumentCommand{\mykey}{m m}{%
   \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
@@ -471,7 +478,7 @@
 \RenewDocumentCommand{\mytyp}{m}{\textit{#1.}\nobreakspace\ignorespaces}
 \RenewDocumentCommand{\mygloss}{m}{#1}
 \RenewDocumentCommand{\mypar}{m}{\textit{#1}}
-\RenewDocumentCommand{\mychem}{m}{\mypar{chemical element with atomic number #1}}
+\RenewDocumentCommand{\mychem}{m}{\mypar{chem.\nobreakspace elem.\nobreakspace #1}}
 % Language labels and transliterations may wrap in narrow dictionary columns.
 \RenewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}\space #1}}
 \RenewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}\space #1}}
@@ -494,6 +501,15 @@
   \noindent{\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
 }
 
+% Pass letter headings to multicols so its space check precedes the heading.
+\newcommand{\LexeratLetterHeading}[1]{%
+  \par%
+  \addvspace{2.5\baselineskip}%
+  {\centering\normalfont\Huge\bfseries #1\par}%
+  \nobreak\vspace{0.7\baselineskip}%
+  \inentryfalse
+}
+
 \begin{document}
 \frontmatter
 \begin{center}
@@ -503,29 +519,32 @@
 \end{center}
 \tableofcontents
 \mainmatter
-\twocolumn[{%
   \phantomsection
   \addcontentsline{toc}{chapter}{Danetian--English}%
-  {\normalfont\huge\bfseries Danetian--English\par}%
+  {\centering\normalfont\huge\bfseries Danetian--English\par}%
   \vspace{1em}%
-}]
-\markboth{Danetian--English}{Danetian--English}
+\thispagestyle{plain}
 % Keep natural word spacing in narrow dictionary columns; allow hyphenation.
 \RaggedRight
-{% endraw %}{% for entry in entries if entry.kind != 'expression' %}
-\mykey{{ '{' }}{{ entry.lemma | latex_escape }}}{{ '{' }}{{ entry.forms[1:] | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}{% for expression in entry.expressions %}{% if loop.first %}\RaeExpressionDivider{}{% else %}\RaeSenseDivider{}{% endif %}
+{% endraw %}{% set forward_alphabet = namespace(letter=none) %}
+{% for entry in entries if entry.kind != 'expression' %}
+{% set letter = entry.lemma.lstrip('-')[:1].upper() %}
+{% if letter != forward_alphabet.letter %}
+{% if forward_alphabet.letter is not none %}\end{multicols}{% endif %}
+\begin{multicols}{2}[\LexeratLetterHeading{{ '{' }}{{ letter | latex_escape }}}][12\baselineskip]
+{% set forward_alphabet.letter = letter %}{% endif %}
+\mykey{{ '{' }}{{ entry.lemma | latex_escape }}}{{ '{' }}{{ entry.forms[1:] | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}{% for expression in entry.expressions %}{% if loop.first %}\RaeExpressionDivider{}{% else %}\RaeBetweenExpressions{}{% endif %}
 \LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}{% endfor %}
 {% endfor %}
+{% if forward_alphabet.letter is not none %}\end{multicols}{% endif %}
 {% if reverse_index %}
 {% raw %}
-\cleardoublepage
-\twocolumn[{%
+\clearpage
   \phantomsection
   \addcontentsline{toc}{chapter}{English--Danetian}%
-  {\normalfont\huge\bfseries English--Danetian\par}%
+  {\centering\normalfont\huge\bfseries English--Danetian\par}%
   \vspace{1em}%
-}]
-\markboth{English--Danetian}{English--Danetian}
+\thispagestyle{plain}
 \RaggedRight
 \begingroup
 % Newmark-style matches: the complete definition, its own type, then headword.
@@ -533,9 +552,16 @@
 \renewcommand{\mygloss}[1]{#1}
 \renewcommand{\mysilentgloss}[1]{}
 {% endraw %}
+{% set reverse_alphabet = namespace(letter=none) %}
 {% for keyword, matches in reverse_index.items() %}
-\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}\RaeSenseDivider{}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{% set examples = namespace(items=[]) %}{% set body = inline(match.definition.content, examples) | trim %}{{ body }}{% if body %}{{ stop(body) }} {% endif %}{% if match.definition.typ %}\mytyp{{ '{' }}{{ type_label(match.definition.typ) }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}{% if not match.entry.lemma.endswith('.') %}.{% endif %}}{% if match.entry.kind == 'expression' %}\nobreakspace{\normalfont expr.}{% endif %}{% for example in examples.items %}\space\myex{{ '{' }}{{ inline(example[0]) }}}{{ '{' }}{{ inline(example[1]) }}}{% endfor %}{% endfor %}
+{% set letter = keyword.lstrip('-')[:1].upper() %}
+{% if letter != reverse_alphabet.letter %}
+{% if reverse_alphabet.letter is not none %}\end{multicols}{% endif %}
+\begin{multicols}{2}[\LexeratLetterHeading{{ '{' }}{{ letter | latex_escape }}}][12\baselineskip]
+{% set reverse_alphabet.letter = letter %}{% endif %}
+\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}{% if match.definition.typ != matches[loop.index0-1].definition.typ %}\RaeTypeDivider{}{% else %}\RaeSenseDivider{}{% endif %}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{% set examples = namespace(items=[]) %}{% set body = inline(match.definition.content, examples) | trim %}{{ body }}{% if body %}{{ stop(body) }} {% endif %}{% if match.definition.typ %}\mytyp{{ '{' }}{{ type_label(match.definition.typ) }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}{% if not match.entry.lemma.endswith('.') %}.{% endif %}}{% if match.entry.kind == 'expression' %}\nobreakspace{\normalfont expr.}{% endif %}{% for example in examples.items %}\space\myex{{ '{' }}{{ inline(example[0]) }}}{{ '{' }}{{ inline(example[1]) }}}{% endfor %}{% endfor %}
 {% endfor %}
+{% if reverse_alphabet.letter is not none %}\end{multicols}{% endif %}
 \endgroup
 {% endif %}
 \end{document}
