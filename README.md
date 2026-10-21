@@ -27,5 +27,5 @@ output by itself.
 
 ## TO DO
 
-* Parse \backslashes correctly to be compatible with LaTeX.
-* Implement recognition of $tags to ensure dictionary reversibility.
+* Make it so that all keywords within the @typ tag are collected, and then the
+user can edit a TSV table to set their abbreviations.

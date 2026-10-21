@@ -1,0 +1,602 @@
+{# Template-local collation: display strings are never modified. #}
+{# Fold Latin diacritics in both composed and combining spellings. #}
+{% set collation_table = ''.maketrans(
+  "\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u00e7\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed\u00ee\u00ef\u00f1\u00f2\u00f3\u00f4\u00f5\u00f6\u00f9\u00fa\u00fb\u00fc\u00fd\u00ff\u0101\u0103\u0105\u0107\u0109\u010b\u010d\u010f\u0113\u0115\u0117\u0119\u011b\u011d\u011f\u0121\u0123\u0125\u0129\u012b\u012d\u012f\u0135\u0137\u013a\u013c\u013e\u0144\u0146\u0148\u014d\u014f\u0151\u0155\u0157\u0159\u015b\u015d\u015f\u0161\u0163\u0165\u0169\u016b\u016d\u016f\u0171\u0173\u0175\u0177\u017a\u017c\u017e\u01a1\u01b0\u01ce\u01d0\u01d2\u01d4\u01d6\u01d8\u01da\u01dc\u01df\u01e1\u01e3\u01e7\u01e9\u01eb\u01ed\u01ef\u01f5\u01f9\u01fb\u01fd\u01ff\u0201\u0203\u0205\u0207\u0209\u020b\u020d\u020f\u0211\u0213\u0215\u0217\u0219\u021b\u021f\u0227\u0229\u022b\u022d\u022f\u0231\u0233\u1e01\u1e03\u1e05\u1e07\u1e09\u1e0b\u1e0d\u1e0f\u1e11\u1e13\u1e15\u1e17\u1e19\u1e1b\u1e1d\u1e1f\u1e21\u1e23\u1e25\u1e27\u1e29\u1e2b\u1e2d\u1e2f\u1e31\u1e33\u1e35\u1e37\u1e39\u1e3b\u1e3d\u1e3f\u1e41\u1e43\u1e45\u1e47\u1e49\u1e4b\u1e4d\u1e4f\u1e51\u1e53\u1e55\u1e57\u1e59\u1e5b\u1e5d\u1e5f\u1e61\u1e63\u1e65\u1e67\u1e69\u1e6b\u1e6d\u1e6f\u1e71\u1e73\u1e75\u1e77\u1e79\u1e7b\u1e7d\u1e7f\u1e81\u1e83\u1e85\u1e87\u1e89\u1e8b\u1e8d\u1e8f\u1e91\u1e93\u1e95\u1ea1\u1ea3\u1ea5\u1ea7\u1ea9\u1eab\u1ead\u1eaf\u1eb1\u1eb3\u1eb5\u1eb7\u1eb9\u1ebb\u1ebd\u1ebf\u1ec1\u1ec3\u1ec5\u1ec7\u1ec9\u1ecb\u1ecd\u1ecf\u1ed1\u1ed3\u1ed5\u1ed7\u1ed9\u1edb\u1edd\u1edf\u1ee1\u1ee3\u1ee5\u1ee7\u1ee9\u1eeb\u1eed\u1eef\u1ef1\u1ef3\u1ef5\u1ef7\u1ef9",
+  "aaaaaaceeeeiiiinooooouuuuyyaaaccccdeeeeegggghiiiijklllnnnooorrrssssttuuuuuuwyzzzouaiouuuuuaa\u00e6gkoo\u0292gna\u00e6\u00f8aaeeiioorruusthaeooooyabbbcdddddeeeeefghhhhhiikkkllllmmmnnnnoooopprrrrsssssttttuuuuuvvwwwwwxxyzzzaaaaaaaaaaaaeeeeeeeeiioooooooooooouuuuuuuyyyy",
+  "\u0300\u0301\u0302\u0303\u0304\u0305\u0306\u0307\u0308\u0309\u030a\u030b\u030c\u030d\u030e\u030f\u0310\u0311\u0312\u0313\u0314\u0315\u0316\u0317\u0318\u0319\u031a\u031b\u031c\u031d\u031e\u031f\u0320\u0321\u0322\u0323\u0324\u0325\u0326\u0327\u0328\u0329\u032a\u032b\u032c\u032d\u032e\u032f\u0330\u0331\u0332\u0333\u0334\u0335\u0336\u0337\u0338\u0339\u033a\u033b\u033c\u033d\u033e\u033f\u0340\u0341\u0342\u0343\u0344\u0345\u0346\u0347\u0348\u0349\u034a\u034b\u034c\u034d\u034e\u034f\u0350\u0351\u0352\u0353\u0354\u0355\u0356\u0357\u0358\u0359\u035a\u035b\u035c\u035d\u035e\u035f\u0360\u0361\u0362\u0363\u0364\u0365\u0366\u0367\u0368\u0369\u036a\u036b\u036c\u036d\u036e\u036f\u1ab0\u1ab1\u1ab2\u1ab3\u1ab4\u1ab5\u1ab6\u1ab7\u1ab8\u1ab9\u1aba\u1abb\u1abc\u1abd\u1abe\u1abf\u1ac0\u1ac1\u1ac2\u1ac3\u1ac4\u1ac5\u1ac6\u1ac7\u1ac8\u1ac9\u1aca\u1acb\u1acc\u1acd\u1ace\u1dc0\u1dc1\u1dc2\u1dc3\u1dc4\u1dc5\u1dc6\u1dc7\u1dc8\u1dc9\u1dca\u1dcb\u1dcc\u1dcd\u1dce\u1dcf\u1dd0\u1dd1\u1dd2\u1dd3\u1dd4\u1dd5\u1dd6\u1dd7\u1dd8\u1dd9\u1dda\u1ddb\u1ddc\u1ddd\u1dde\u1ddf\u1de0\u1de1\u1de2\u1de3\u1de4\u1de5\u1de6\u1de7\u1de8\u1de9\u1dea\u1deb\u1dec\u1ded\u1dee\u1def\u1df0\u1df1\u1df2\u1df3\u1df4\u1df5\u1df6\u1df7\u1df8\u1df9\u1dfa\u1dfb\u1dfc\u1dfd\u1dfe\u1dff\u20d0\u20d1\u20d2\u20d3\u20d4\u20d5\u20d6\u20d7\u20d8\u20d9\u20da\u20db\u20dc\u20dd\u20de\u20df\u20e0\u20e1\u20e2\u20e3\u20e4\u20e5\u20e6\u20e7\u20e8\u20e9\u20ea\u20eb\u20ec\u20ed\u20ee\u20ef\u20f0\ufe20\ufe21\ufe22\ufe23\ufe24\ufe25\ufe26\ufe27\ufe28\ufe29\ufe2a\ufe2b\ufe2c\ufe2d\ufe2e\ufe2f"
+) %}
+{% macro normalize_text(text) -%}
+  {%- set key = text.casefold().translate(collation_table).lstrip('-') -%}
+  {{- key -}}
+{%- endmacro %}
+
+{# Inline formatting stays inside these two templates; @ arguments remain strings. #}
+{% set languages = {
+ 'pie':'PIE', 'lat':'Lat.', 'grc':'Anc. Gr.', 'grk':'Anc. Gr.',
+ 'rus':'Rus.', 'eng':'Eng.', 'fra':'Fr.', 'dnt':'Dan.', 'dan':'Danish',
+ 'ger':'Ger.', 'ita':'It.', 'cat':'Cat.', 'ara':'Ar.', 'per':'Pers.',
+ 'bg':'Bulg.', 'kyr':'Kyrg.', 'tur':'Turk.', 'protrk':'Proto-Turkic',
+ 'protung':'Proto-Tungusic', 'av':'Av.'
+} %}
+{% set double_args = ['grc','grk','rus','ara','per','bg','kyr','av','ex'] %}
+{% set single_args = ['par','field','reg','chem','gloss','silentgloss','emph','textit','textbf'] %}
+{% set zero_args = {'cf':'cf.', 'etc':'etc.', 'ono':'onomatopoeic', 'unknown':'unknown'} %}
+
+{# Read one balanced {...} group, advancing a mutable cursor. #}
+{% macro group(text, cursor) -%}
+  {%- set g = namespace(depth=0, start=cursor.i+1, end=cursor.i, done=false) -%}
+  {%- for j in range(cursor.i, text|length) -%}
+    {%- if not g.done -%}
+      {%- if text[j] == '{' -%}{%- set g.depth = g.depth+1 -%}
+      {%- elif text[j] == '}' -%}
+        {%- set g.depth = g.depth-1 -%}
+        {%- if g.depth == 0 -%}{%- set g.end=j -%}{%- set g.done=true -%}{%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if g.done -%}
+    {%- set cursor.value=text[g.start:g.end] -%}{%- set cursor.i=g.end+1 -%}
+  {%- else -%}
+    {%- set cursor.value=text[cursor.i+1:] -%}{%- set cursor.i=text|length -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{# Only punctuation adjoining omitted content is normalized. #}
+{% set omitted = '\uE000' %}
+{% macro tidy(text) -%}
+  {%- set n = namespace(out='', pending='', hidden=false) -%}
+  {%- for ch in text -%}
+    {%- if ch in ' \t\r\n,;' or ch == omitted -%}
+      {%- set n.pending = n.pending + ch -%}
+      {%- if ch == omitted -%}{%- set n.hidden = true -%}{%- endif -%}
+    {%- else -%}
+      {%- if n.hidden -%}
+        {%- if n.out and ch not in '.!?:)]}' and n.out[-1:] not in '([{' -%}
+          {%- if ';' in n.pending -%}{%- set n.out = n.out + '; ' -%}
+          {%- elif ',' in n.pending -%}{%- set n.out = n.out + ', ' -%}
+          {%- else -%}{%- set n.out = n.out + ' ' -%}{%- endif -%}
+        {%- endif -%}
+      {%- else -%}{%- set n.out = n.out + n.pending -%}{%- endif -%}
+      {%- set n.out = n.out + ch -%}
+      {%- set n.pending = '' -%}{%- set n.hidden = false -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {{- n.out -}}{%- if not n.hidden -%}{{- n.pending -}}{%- endif -%}
+{%- endmacro %}
+
+{% macro inline(text, examples=none) -%}
+  {%- set text = text or '' -%}
+  {%- set c=namespace(i=0, value='') -%}
+  {%- set rendered -%}
+  {%- for unused in range(text|length) -%}
+    {%- if c.i < text|length -%}
+      {%- set ch=text[c.i] -%}
+      {%- if ch in ['$','&'] -%}
+        {%- set start=c.i -%}{%- set c.i=c.i+1 -%}
+        {%- if c.i < text|length and text[c.i]=='{' -%}
+          {{- group(text,c) -}}
+        {%- else -%}
+          {%- set word=namespace(end=c.i, done=false) -%}
+          {%- for j in range(c.i,text|length) -%}
+            {%- if not word.done and (text[j].isalnum() or text[j] in '_.:-') -%}
+              {%- set word.end=j+1 -%}
+            {%- else -%}{%- set word.done=true -%}{%- endif -%}
+          {%- endfor -%}
+          {%- set c.value=text[c.i:word.end] -%}{%- set c.i=word.end -%}
+        {%- endif -%}
+        {%- if not c.value -%}{{- ch|latex_escape -}}
+        {%- elif ch=='$' -%}
+          {%- if format=='html' -%}<span class="gloss">{{ inline(c.value, examples) }}</span>
+          {%- else -%}\mygloss{ {{- inline(c.value, examples) -}} }{% endif -%}
+        {%- elif format=='html' -%}<span class="silent-gloss" hidden>{{ inline(c.value, examples) }}</span>
+        {%- else -%}{{- omitted -}}{% endif -%}
+      {%- elif ch=='\\' -%}
+        {%- set start=c.i -%}{%- set c.i=c.i+1 -%}
+        {%- set name=namespace(end=c.i, done=false) -%}
+        {%- for j in range(c.i,text|length) -%}
+          {%- if not name.done and text[j] in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' -%}
+            {%- set name.end=j+1 -%}
+          {%- else -%}{%- set name.done=true -%}{%- endif -%}
+        {%- endfor -%}
+        {%- set name=text[c.i:name.end] -%}{%- set c.i=c.i+name|length -%}
+        {%- set a=namespace(values=[],done=false) -%}
+        {%- for unused2 in range(text|length-c.i) -%}
+          {%- if not a.done and c.i < text|length and text[c.i]=='{' -%}
+            {{- group(text,c) -}}{%- set a.values=a.values+[c.value] -%}
+          {%- else -%}{%- set a.done=true -%}{%- endif -%}
+        {%- endfor -%}
+        {%- set expected=2 if name in double_args else 0 if name in zero_args else 1 -%}
+        {%- if name in languages and a.values|length >= expected -%}
+          {%- set form = inline(a.values[0], examples) -%}
+          {%- if name=='pie' or languages[name].startswith('Proto-') -%}
+            {%- set form = '*' + form.lstrip() -%}
+          {%- endif -%}
+          {%- if format=='html' -%}
+            {{- languages[name] }} <i{% if name in ['ara','per','av'] %} dir="rtl"{% endif %}>{{ form }}</i>{% if a.values|length > 1 %} <i>{{ inline(a.values[1], examples) }}</i>{% endif %}
+          {%- else -%}
+            {%- set texname='grc' if name=='grk' else name -%}
+            \my{{ texname }}{ {{- form -}} }{% if name in double_args %}{ {{- inline(a.values[1], examples) -}} }{% endif %}
+          {%- endif -%}
+        {%- elif name in zero_args -%}
+          {%- if format=='html' -%}{{- zero_args[name] -}}
+          {%- else -%}\my{{ name }}{}{% endif -%}
+        {%- elif name=='ex' and a.values|length >= 2 -%}
+          {%- if examples is not none -%}
+            {%- set examples.items = examples.items + [[a.values[0], a.values[1]]] -%}
+            {{- omitted -}}
+          {%- elif format=='html' -%}<span class="sample-phrase"><i>{{ inline(a.values[0], examples) }}</i> “{{ inline(a.values[1], examples) }}”</span>
+          {%- else -%}\myex{ {{- inline(a.values[0], examples) -}} }{ {{- inline(a.values[1], examples) -}} }{% endif -%}
+        {%- elif name in single_args and a.values -%}
+          {%- if format=='latex' and name=='silentgloss' -%}{{- omitted -}}
+          {%- elif format=='latex' -%}
+            {%- set texname=name if name in ['emph','textit','textbf'] else 'my'+name -%}
+            \{{ texname }}{ {{- inline(a.values[0], examples) -}} }
+          {%- elif name=='chem' -%}(atomic number {{ inline(a.values[0], examples) }})
+          {%- elif name=='silentgloss' -%}<span class="silent-gloss" hidden>{{ inline(a.values[0], examples) }}</span>
+          {%- elif name=='gloss' -%}<span class="gloss">{{ inline(a.values[0], examples) }}</span>
+          {%- elif name=='par' -%}<span class="qualifier">{{ inline(a.values[0], examples) }}</span>
+          {%- elif name in ['field','reg'] -%}<i>({{ inline(a.values[0], examples) }})</i>
+          {%- elif name=='textbf' -%}<b>{{ inline(a.values[0], examples) }}</b>
+          {%- else -%}<i>{{ inline(a.values[0], examples) }}</i>{% endif -%}
+        {%- else -%}{{- text[start:c.i]|latex_escape -}}{% endif -%}
+        {%- if (name in languages or name in single_args or name in double_args or name in zero_args) and a.values|length > expected -%}
+          {%- for extra in a.values[expected:] -%}{{- ('{'+extra+'}')|latex_escape -}}{%- endfor -%}
+        {%- endif -%}
+      {%- elif ch=='{' -%}
+        {{- group(text,c) -}}{{- inline(c.value, examples) -}}
+      {%- else -%}
+        {{- ch|latex_escape -}}{%- set c.i=c.i+1 -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- endset -%}
+  {{- tidy(rendered) -}}
+{%- endmacro %}
+
+{# Expand adposition case labels for display; source typ values stay unchanged. #}
+{% macro type_label(value) -%}
+  {%- if value.startswith('prep+') -%}
+    prep.\nobreakspace con\nobreakspace cas.\nobreakspace{{- ' ' -}}{{- value[5:] | trim | latex_escape -}}
+  {%- elif value.startswith('post+') -%}
+    post.\nobreakspace con\nobreakspace caso\nobreakspace{{- ' ' -}}{{- value[5:] | trim | latex_escape -}}
+  {%- else -%}{{- value | latex_escape -}}{%- endif -%}
+{%- endmacro %}
+
+{# Every sense keeps its own captured typ. Typ changes introduce a new block. #}
+{% macro stop(text) -%}
+  {%- if text.rstrip().rstrip('}').rstrip()[-1:] not in ['.', '!', '?', ';', ':'] -%}\unskip.{%- endif -%}
+{%- endmacro %}
+{% macro senses(item) -%}
+{%- for definition in item.definitions -%}
+{%- if not loop.first -%}
+  {%- if definition.typ != item.definitions[loop.index0-1].typ -%}\RaeTypeDivider{}
+  {%- else -%}\RaeSenseDivider{}
+  {%- endif -%}
+{%- endif -%}
+{%- if definition.typ and (loop.first or definition.typ != item.definitions[loop.index0-1].typ) -%}
+\mytyp{{ '{' }}{{ type_label(definition.typ) }}} {{ ' ' }}
+{%- endif -%}
+{%- if item.definitions|length > 1 -%}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif -%}
+{%- set body = inline(definition.content) | trim -%}
+{{- body -}}{%- if body -%}{{- stop(body) -}}{%- endif -%}
+{%- endfor -%}
+{%- endmacro %}
+
+{% set format='latex' %}
+{% raw %}\documentclass[10pt,oneside,openany]{book}
+% Engine: XeLaTeX or LuaLaTeX recommended.
+\RequirePackage{xparse}
+\RequirePackage{graphicx}
+\RequirePackage{fontspec}
+\RequirePackage{polyglossia}
+\RequirePackage{microtype}
+\RequirePackage{enumitem}
+\RequirePackage{etoolbox}
+\RequirePackage{xcolor}
+\RequirePackage{hyperref}
+\RequirePackage{geometry}
+\RequirePackage{fancyhdr}
+\RequirePackage{setspace}
+\RequirePackage{ragged2e}
+\RequirePackage{multicol}
+
+% ---------- Page/layout ----------
+\geometry{
+  paperwidth=6in,
+  paperheight=9in,
+  left=0.7in,
+  right=0.7in,
+  top=0.75in,
+  bottom=0.8in,
+  headheight=14pt
+}
+
+\setstretch{1.0}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+% rightmark is the first entry mark; leftmark is the last (also in two columns).
+\fancyhead[L]{\footnotesize\itshape \rightmark}
+\fancyhead[R]{\footnotesize\itshape \leftmark}
+\fancyfoot[C]{\thepage}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black
+}
+
+% ---------- Fonts ----------
+% Replace these with your preferred installed fonts if needed.
+%\setmainfont{Libertinus Serif}
+%\newfontfamily\danetianfont{Libertinus Serif}
+%\newfontfamily\foreignfont{Libertinus Serif}
+%\newfontfamily\greekfont[Scale=MatchLowercase]{Libertinus Serif}
+%\newfontfamily\cyrillicfont{Libertinus Serif}
+\IfFontExistsTF{Amiri}{\newfontfamily\arabicfont[Script=Arabic]{Amiri}}{\newfontfamily\arabicfont[Script=Arabic]{DejaVu Sans}}
+\IfFontExistsTF{Noto Sans Avestan}{\newfontfamily\avestanfont[Script=Avestan]{Noto Sans Avestan}}{\newfontfamily\avestanfont{DejaVu Sans}}
+
+
+\IfFontExistsTF{Charis SIL}{\setmainfont{Charis SIL}}{\setmainfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\danetianfont{Charis SIL}}{\newfontfamily\danetianfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\foreignfont{Charis SIL}}{\newfontfamily\foreignfont{DejaVu Serif}}
+\IfFontExistsTF{Charis SIL}{\newfontfamily\cyrillicfont{Charis SIL}}{\newfontfamily\cyrillicfont{DejaVu Serif}}
+\IfFontExistsTF{Gentium Plus}{\newfontfamily\greekfont{Gentium Plus}}{\newfontfamily\greekfont{DejaVu Serif}}
+
+\setdefaultlanguage{spanish}
+\setotherlanguages{greek,russian,arabic}
+
+% ---------- Internal state ----------
+\newcounter{dictsense}
+\newif\ifinentry
+\inentryfalse
+
+\newcommand{\dictentrybreak}{%
+  \par\addvspace{0.22\baselineskip}%
+}
+
+
+\newcounter{dictentry}
+
+\makeatletter
+\newcommand{\dictsensecount}[2]{%
+	\expandafter\gdef\csname dictsenses@#1\endcsname{#2}%
+	}
+
+\newcommand{\dictsavesenses}{%
+  \ifnum\value{dictentry}>0
+    \immediate\write\@auxout{%
+      \string\dictsensecount
+        {\arabic{dictentry}}{\arabic{dictsense}}%
+    }%
+  \fi
+}
+
+\newcommand{\dictreset}{%
+	\dictsavesenses
+	\stepcounter{dictentry}%
+	\setcounter{dictsense}{0}%
+}
+
+\newcommand{\dictsenselabel}[1]{%
+	\ifcsname dictsenses@\arabic{dictentry}\endcsname
+		\ifnum\csname dictsenses@\arabic{dictentry}\endcsname>1
+			\textbf{#1.}\nobreak\hspace{0.3em}%
+		\fi
+	\fi
+}
+
+\makeatother
+\AtEndDocument{\dictsavesenses}
+
+% ---------- Entry macros ----------
+\NewDocumentCommand{\mykey}{m}{%
+  \ifinentry\dictentrybreak\fi
+  \inentrytrue
+  \dictreset
+  \markboth{#1}{#1}%
+  {\danetianfont\bfseries #1.}%
+}
+
+\NewDocumentCommand{\myexpr}{m}{%
+  \ifinentry\dictentrybreak\fi
+  \inentrytrue
+  \dictreset
+  \markboth{#1}{#1}%
+  {\danetianfont\bfseries #1}%
+  \nobreak\hspace{0.5em}%
+  {\normalfont expr.}%
+}
+
+\NewDocumentCommand{\myety}{m}{%
+%  \par
+%  \hangindent=2em\hangafter=1
+%  \hspace*{1.2em}
+	{\footnotesize [\textit{#1}]}%
+}
+
+\NewDocumentCommand{\myinfl}{o m}{%
+%  \nobreak\hspace{0.6em}%
+%  {\footnotesize\color{gray}%
+%    \IfNoValueTF{#1}
+%      {[infl.\ #2]}
+%      {[infl.\ class~#1: #2]}%
+%  }%
+}
+
+\NewDocumentCommand{\mytyp}{m}{%
+  \nobreak%\hspace{0.6em}%
+  %{\footnotesize\scshape #1}%
+  \textit{#1.}
+}
+
+\NewDocumentCommand{\mylink}{m}{%
+%  \par
+%  \hangindent=2em\hangafter=1
+%  \hspace*{1.2em}{\footnotesize\itshape Cf. forms}~#1%
+}
+
+\NewDocumentCommand{\mydef}{o m}{%
+  \stepcounter{dictsense}%
+  \IfNoValueTF{#1}
+    {\dictsenselabel{\arabic{dictsense}}}
+    {\dictsenselabel{#1}}%
+  #2%
+}
+
+% ---------- Inline semantic/usage macros ----------
+\NewDocumentCommand{\mypar}{m}{%
+%  {\space\textnormal{\footnotesize\itshape #1}}%
+  \textit{#1}
+}
+
+\NewDocumentCommand{\myfield}{m}{%
+  {\footnotesize\textsc{#1}}\nobreakspace
+}
+
+\NewDocumentCommand{\myreg}{m}{%
+  {\footnotesize\textsc{#1}}\nobreakspace
+}
+
+\NewDocumentCommand{\mygloss}{m}{%
+  \emph{#1}%
+}
+
+\NewDocumentCommand{\mysilentgloss}{m}{%
+  {\color{gray}\emph{#1}}%
+}
+
+\NewDocumentCommand{\myex}{m m}{%
+%  \par
+%  \hspace*{2.7em}%
+  {\footnotesize\textquotedblleft #1\textquotedblright\enspace---\enspace#2}%
+}
+
+% ---------- Small utility tags ----------
+\NewDocumentCommand{\mycf}{}{%
+  \textit{cf.}\space
+}
+
+\NewDocumentCommand{\myetc}{}{%
+  \textit{etc.}%
+}
+
+\NewDocumentCommand{\myunknown}{}{%
+  \textit{unknown origin}%
+}
+
+\NewDocumentCommand{\mychem}{m}{%
+%  {\footnotesize\textsc{el.~#1}}%
+  \mypar{chem.\nobreakspace elem.\nobreakspace #1}
+}
+
+% ---------- Source-language / label tags ----------
+% 1-arg forms
+\NewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}\space #1}}
+\NewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}\space #1}}
+\NewDocumentCommand{\mydnt}{m}{{\danetianfont #1}}
+\NewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}\space #1}}
+\NewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}\space #1}}
+\NewDocumentCommand{\myger}{m}{{\foreignfont\textit{Ger.}\space #1}}
+\NewDocumentCommand{\myita}{m}{{\foreignfont\textit{It.}\space #1}}
+\NewDocumentCommand{\mybg}{m m}{{\foreignfont\textit{Bulg.}~#1~#2}}
+\NewDocumentCommand{\mycat}{m}{{\foreignfont\textit{Cat.}\space #1}}
+\NewDocumentCommand{\mydan}{m}{{\foreignfont\textit{Dan.}\space #1}}
+\NewDocumentCommand{\mykyr}{m m}{{\foreignfont\textit{Kyrg.}~#1~#2}}
+\NewDocumentCommand{\myono}{}{{\textit{onom.}}}
+\NewDocumentCommand{\myprotrk}{m}{{\foreignfont\textit{Proto-Turkic}\space #1}}
+\NewDocumentCommand{\myprotung}{m}{{\foreignfont\textit{Proto-Tungusic}\space #1}}
+\NewDocumentCommand{\mytur}{m}{{\foreignfont\textit{Tur.}\space #1}}
+\NewDocumentCommand{\myara}{m m}{{\textit{Ar.}~\textarabic{#1}~#2}}
+\NewDocumentCommand{\myper}{m m}{{\textit{Pers.}~\textarabic{#1}~#2}}
+\NewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}~\textgreek{#1}~#2}}
+\NewDocumentCommand{\myrus}{m m}{{\textit{Rus.}~{\cyrillicfont #1}~#2}}
+\NewDocumentCommand{\myav}{m m}{{\textit{Av.}~{\avestanfont #1}~#2}}
+
+% ---------- Fallbacks for future macros ----------
+% These are harmless placeholders so the document compiles even if your exporter
+% emits tags you have not styled yet.
+\NewDocumentCommand{\mysyn}{m}{%
+  \par\hangindent=2em\hangafter=1
+  \hspace*{1.2em}{\footnotesize\itshape Syn.}~#1%
+}
+
+\NewDocumentCommand{\mylinknote}{m}{%
+  \par\hangindent=2em\hangafter=1
+  \hspace*{1.2em}{\footnotesize\itshape Note}~#1%
+}
+
+
+\NewDocumentCommand{\mypp}{m}{}
+
+\newcommand{\LexeratSenseLabel}[1]{\textbf{#1.}\nobreak\hspace{0.3em}}
+
+% Embedded expressions do not reset the lemma's sense counter or running header.
+\NewDocumentCommand{\LexeratLinkedExpression}{m m}{%
+  \par\begingroup
+  \hangindent=1.2em\hangafter=1
+  \noindent\textbullet\enspace{\danetianfont\bfseries #1}%
+  \nobreak\hspace{0.5em}{\normalfont expr.}\enspace
+  #2\par\endgroup
+}
+
+
+% Reverse headings do not reset the Danetian sense counters.
+\NewDocumentCommand{\LexeratReverseHead}{m}{%
+  \par\addvspace{0.65\baselineskip}%
+  \markboth{#1}{#1}%
+  \noindent\textbf{\textit{#1}}\par\nopagebreak[4]%
+}
+\newenvironment{LexeratReverseMatches}{%
+  \begin{itemize}[label=\(\circ\),leftmargin=1.1em,labelsep=0.35em,
+    itemsep=0.15em,parsep=0pt,topsep=0.15em,partopsep=0pt]%
+}{\end{itemize}}
+
+
+% ---------- RAE-inspired compact typography ----------
+% The RAE dossier uses National and Tiempos Text. Retain Charis SIL for the
+% multilingual body, and use an available sans serif for the headwords.
+\newfontfamily\lemmafont{DejaVu Sans}
+\setlength{\columnsep}{1.4em}
+\setlength{\multicolsep}{0pt}
+\raggedcolumns
+\emergencystretch=2em
+\tolerance=1800
+\widowpenalty=10000
+\clubpenalty=10000
+% Plain spacing between same-type senses; hollow diamond at type changes.
+\newcommand{\RaeSenseDivider}{\unskip\hspace{0.4em}}
+\newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\raisebox{\depth}{\resizebox*{!}{1ex}{\ensuremath{\diamond}}}\nobreak\hspace{0.4em}}
+% Filled square opens the expressions section; filled diamonds separate phrases.
+\newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{1ex}{1ex}\nobreak\hspace{0.4em}}
+\newcommand{\RaeBetweenExpressions}{\unskip\hspace{0.4em}\rotatebox{45}{\rule{0.8ex}{0.8ex}}\nobreak\hspace{0.4em}}
+% Only the primary form uses the heading font; other forms match reverse matches.
+\RenewDocumentCommand{\mykey}{m m}{%
+  \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  {\lemmafont\bfseries #1\ifstrempty{#2}{.}{,}}%
+  \ifstrempty{#2}{}{\space{\danetianfont\bfseries #2.}}%
+  \nobreak\hspace{0.35em}\ignorespaces
+}
+\RenewDocumentCommand{\myexpr}{m}{%
+  \ifinentry\dictentrybreak\fi\inentrytrue\dictreset
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  {\danetianfont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
+}
+\RenewDocumentCommand{\myety}{m}{{\small\textup{(}\textit{De #1}\textup{)}}\space\ignorespaces}
+\RenewDocumentCommand{\mytyp}{m}{\textit{#1.}\nobreakspace\ignorespaces}
+\RenewDocumentCommand{\mygloss}{m}{#1}
+\RenewDocumentCommand{\mypar}{m}{\textit{#1}}
+\RenewDocumentCommand{\mychem}{m}{\mypar{chem.\nobreakspace elem.\nobreakspace #1}}
+% Language labels and transliterations may wrap in narrow dictionary columns.
+\RenewDocumentCommand{\mylat}{m}{{\foreignfont\textit{Lat.}\space #1}}
+\RenewDocumentCommand{\mypie}{m}{{\foreignfont\textit{PIE}\space #1}}
+\RenewDocumentCommand{\myeng}{m}{{\foreignfont\textit{Eng.}\space #1}}
+\RenewDocumentCommand{\myfra}{m}{{\foreignfont\textit{Fr.}\space #1}}
+\RenewDocumentCommand{\mygrc}{m m}{{\textit{Gk.}\space\textgreek{#1}\space#2}}
+\RenewDocumentCommand{\myrus}{m m}{{\textit{Rus.}\space{\cyrillicfont #1}\space#2}}
+
+\RenewDocumentCommand{\mysilentgloss}{m}{}
+\RenewDocumentCommand{\myex}{m m}{\textit{#1}\space\textquotedblleft #2\textquotedblright}
+\RenewDocumentCommand{\myfield}{m}{\textit{#1.}\nobreakspace}
+\RenewDocumentCommand{\myreg}{m}{\textit{#1.}\nobreakspace}
+\RenewDocumentCommand{\LexeratLinkedExpression}{m m}{%
+  {\danetianfont\bfseries #1.}\nobreak\hspace{0.35em}#2%
+}
+\RenewDocumentCommand{\LexeratReverseHead}{m}{%
+  \par\addvspace{0.22\baselineskip}%
+  \hangindent=0.75em\hangafter=1\noindent
+  \markboth{#1}{#1}%
+  \noindent{\lemmafont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
+}
+
+% Pass letter headings to multicols so its space check precedes the heading.
+\newcommand{\LexeratLetterHeading}[1]{%
+  \par%
+  \addvspace{2.5\baselineskip}%
+  {\centering\normalfont\Huge\bfseries #1\par}%
+  \nobreak\vspace{0.7\baselineskip}%
+  \inentryfalse
+}
+
+\begin{document}
+\frontmatter
+\begin{center}
+  {\Huge Diccionario de la lengua samiruana}\par
+  \vspace{1em}
+  {\large Samiruano--Español / Español--Samiruano}
+\end{center}
+\tableofcontents
+\mainmatter
+  \phantomsection
+  \addcontentsline{toc}{chapter}{Samiruano--Español}%
+  {\centering\normalfont\huge\bfseries Samiruano--Español\par}%
+  \vspace{1em}%
+\thispagestyle{plain}
+% Keep natural word spacing in narrow dictionary columns; allow hyphenation.
+\RaggedRight
+{% endraw %}
+{%- set forward_rows = namespace(values=[]) -%}
+{%- for entry in entries if entry.kind != 'expression' -%}
+  {%- set forward_rows.values = forward_rows.values + [{'key': normalize_text(entry.lemma), 'entry': entry}] -%}
+{%- endfor -%}
+{% set forward_alphabet = namespace(letter=none) %}
+{% for row in forward_rows.values | sort(attribute='key') %}
+{% set entry = row.entry %}
+{% set letter = normalize_text(entry.lemma)[:1].upper() %}
+{% if letter != forward_alphabet.letter %}
+{% if forward_alphabet.letter is not none %}\end{multicols}{% endif %}
+\begin{multicols}{2}[\LexeratLetterHeading{{ '{' }}{{ letter | latex_escape }}}][12\baselineskip]
+{% set forward_alphabet.letter = letter %}{% endif %}
+\mykey{{ '{' }}{{ entry.lemma | latex_escape }}}{{ '{' }}{{ entry.forms[1:] | join(', ') | latex_escape }}} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}
+{%- set expression_rows = namespace(values=[]) -%}
+{%- for expression in entry.expressions -%}
+  {%- set expression_rows.values = expression_rows.values + [{'key': normalize_text(expression.lemma), 'entry': expression}] -%}
+{%- endfor -%}
+{% for row in expression_rows.values | sort(attribute='key') %}{% set expression = row.entry %}{% if loop.first %}\RaeExpressionDivider{}{% else %}\RaeBetweenExpressions{}{% endif %}
+\LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}{% endfor %}
+{% endfor %}
+{% if forward_alphabet.letter is not none %}\end{multicols}{% endif %}
+{% if reverse_index %}
+{% raw %}
+\clearpage
+  \phantomsection
+  \addcontentsline{toc}{chapter}{Español--Samiruano}%
+  {\centering\normalfont\huge\bfseries Español--Samiruano\par}%
+  \vspace{1em}%
+\thispagestyle{plain}
+\RaggedRight
+\begingroup
+% Newmark-style matches: the complete definition, its own type, then headword.
+% Gloss markers identify lookup words; they need not italicize the definition.
+\renewcommand{\mygloss}[1]{#1}
+\renewcommand{\mysilentgloss}[1]{}
+{% endraw %}
+{%- set reverse_rows = namespace(values=[]) -%}
+{%- for keyword, matches in reverse_index.items() -%}
+  {%- set reverse_rows.values = reverse_rows.values + [{'key': normalize_text(keyword), 'keyword': keyword, 'matches': matches}] -%}
+{%- endfor -%}
+{% set reverse_alphabet = namespace(letter=none) %}
+{% for row in reverse_rows.values | sort(attribute='key') %}
+{% set keyword = row.keyword %}
+{%- set match_rows = namespace(values=[]) -%}
+{%- for match in row.matches -%}
+  {%- set match_rows.values = match_rows.values + [{'key': normalize_text(match.entry.lemma), 'match': match}] -%}
+{%- endfor -%}
+{% set matches = match_rows.values | sort(attribute='key') | map(attribute='match') | list %}
+{% set letter = normalize_text(keyword)[:1].upper() %}
+{% if letter != reverse_alphabet.letter %}
+{% if reverse_alphabet.letter is not none %}\end{multicols}{% endif %}
+\begin{multicols}{2}[\LexeratLetterHeading{{ '{' }}{{ letter | latex_escape }}}][12\baselineskip]
+{% set reverse_alphabet.letter = letter %}{% endif %}
+\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}{% if match.definition.typ != matches[loop.index0-1].definition.typ %}\RaeTypeDivider{}{% else %}\RaeSenseDivider{}{% endif %}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{% set examples = namespace(items=[]) %}{% set body = inline(match.definition.content, examples) | trim %}{{ body }}{% if body %}{{ stop(body) }} {% endif %}{% if match.definition.typ %}\mytyp{{ '{' }}{{ type_label(match.definition.typ) }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}{% if not match.entry.lemma.endswith('.') %}.{% endif %}}{% if match.entry.kind == 'expression' %}\nobreakspace{\normalfont expr.}{% endif %}{% for example in examples.items %}\space\myex{{ '{' }}{{ inline(example[0]) }}}{{ '{' }}{{ inline(example[1]) }}}{% endfor %}{% endfor %}
+{% endfor %}
+{% if reverse_alphabet.letter is not none %}\end{multicols}{% endif %}
+\endgroup
+{% endif %}
+\end{document}
