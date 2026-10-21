@@ -29,9 +29,33 @@
   {%- endif -%}
 {%- endmacro %}
 
-{% macro inline(text) -%}
+{# Only punctuation adjoining omitted content is normalized. #}
+{% set omitted = '\uE000' %}
+{% macro tidy(text) -%}
+  {%- set n = namespace(out='', pending='', hidden=false) -%}
+  {%- for ch in text -%}
+    {%- if ch in ' \t\r\n,;' or ch == omitted -%}
+      {%- set n.pending = n.pending + ch -%}
+      {%- if ch == omitted -%}{%- set n.hidden = true -%}{%- endif -%}
+    {%- else -%}
+      {%- if n.hidden -%}
+        {%- if n.out and ch not in '.!?:)]}' and n.out[-1:] not in '([{' -%}
+          {%- if ';' in n.pending -%}{%- set n.out = n.out + '; ' -%}
+          {%- elif ',' in n.pending -%}{%- set n.out = n.out + ', ' -%}
+          {%- else -%}{%- set n.out = n.out + ' ' -%}{%- endif -%}
+        {%- endif -%}
+      {%- else -%}{%- set n.out = n.out + n.pending -%}{%- endif -%}
+      {%- set n.out = n.out + ch -%}
+      {%- set n.pending = '' -%}{%- set n.hidden = false -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {{- n.out -}}{%- if not n.hidden -%}{{- n.pending -}}{%- endif -%}
+{%- endmacro %}
+
+{% macro inline(text, examples=none) -%}
   {%- set text = text or '' -%}
   {%- set c=namespace(i=0, value='') -%}
+  {%- set rendered -%}
   {%- for unused in range(text|length) -%}
     {%- if c.i < text|length -%}
       {%- set ch=text[c.i] -%}
@@ -50,10 +74,10 @@
         {%- endif -%}
         {%- if not c.value -%}{{- ch|latex_escape -}}
         {%- elif ch=='$' -%}
-          {%- if format=='html' -%}<span class="gloss">{{ inline(c.value) }}</span>
-          {%- else -%}\mygloss{ {{- inline(c.value) -}} }{% endif -%}
-        {%- elif format=='html' -%}<span class="silent-gloss" hidden>{{ inline(c.value) }}</span>
-        {%- else -%}\mysilentgloss{ {{- inline(c.value) -}} }{% endif -%}
+          {%- if format=='html' -%}<span class="gloss">{{ inline(c.value, examples) }}</span>
+          {%- else -%}\mygloss{ {{- inline(c.value, examples) -}} }{% endif -%}
+        {%- elif format=='html' -%}<span class="silent-gloss" hidden>{{ inline(c.value, examples) }}</span>
+        {%- else -%}{{- omitted -}}{% endif -%}
       {%- elif ch=='\\' -%}
         {%- set start=c.i -%}{%- set c.i=c.i+1 -%}
         {%- set name=namespace(end=c.i, done=false) -%}
@@ -71,40 +95,57 @@
         {%- endfor -%}
         {%- set expected=2 if name in double_args else 0 if name in zero_args else 1 -%}
         {%- if name in languages and a.values|length >= expected -%}
+          {%- set form = inline(a.values[0], examples) -%}
+          {%- if name=='pie' or languages[name].startswith('Proto-') -%}
+            {%- set form = '*' + form.lstrip() -%}
+          {%- endif -%}
           {%- if format=='html' -%}
-            {{- languages[name] }} <i{% if name in ['ara','per','av'] %} dir="rtl"{% endif %}>{% if name in ['pie','protrk','protung'] %}*{% endif %}{{ inline(a.values[0]) }}</i>{% if a.values|length > 1 %} <i>{{ inline(a.values[1]) }}</i>{% endif %}
+            {{- languages[name] }} <i{% if name in ['ara','per','av'] %} dir="rtl"{% endif %}>{{ form }}</i>{% if a.values|length > 1 %} <i>{{ inline(a.values[1], examples) }}</i>{% endif %}
           {%- else -%}
             {%- set texname='grc' if name=='grk' else name -%}
-            \my{{ texname }}{ {{- inline(a.values[0]) -}} }{% if name in double_args %}{ {{- inline(a.values[1]) -}} }{% endif %}
+            \my{{ texname }}{ {{- form -}} }{% if name in double_args %}{ {{- inline(a.values[1], examples) -}} }{% endif %}
           {%- endif -%}
         {%- elif name in zero_args -%}
           {%- if format=='html' -%}{{- zero_args[name] -}}
           {%- else -%}\my{{ name }}{}{% endif -%}
         {%- elif name=='ex' and a.values|length >= 2 -%}
-          {%- if format=='html' -%}<span class="sample-phrase"><i>{{ inline(a.values[0]) }}</i> “{{ inline(a.values[1]) }}”</span>
-          {%- else -%}\myex{ {{- inline(a.values[0]) -}} }{ {{- inline(a.values[1]) -}} }{% endif -%}
+          {%- if examples is not none -%}
+            {%- set examples.items = examples.items + [[a.values[0], a.values[1]]] -%}
+            {{- omitted -}}
+          {%- elif format=='html' -%}<span class="sample-phrase"><i>{{ inline(a.values[0], examples) }}</i> “{{ inline(a.values[1], examples) }}”</span>
+          {%- else -%}\myex{ {{- inline(a.values[0], examples) -}} }{ {{- inline(a.values[1], examples) -}} }{% endif -%}
         {%- elif name in single_args and a.values -%}
-          {%- if format=='latex' -%}
+          {%- if format=='latex' and name=='silentgloss' -%}{{- omitted -}}
+          {%- elif format=='latex' -%}
             {%- set texname=name if name in ['emph','textit','textbf'] else 'my'+name -%}
-            \{{ texname }}{ {{- inline(a.values[0]) -}} }
-          {%- elif name=='chem' -%}(atomic number {{ inline(a.values[0]) }})
-          {%- elif name=='silentgloss' -%}<span class="silent-gloss" hidden>{{ inline(a.values[0]) }}</span>
-          {%- elif name=='gloss' -%}<span class="gloss">{{ inline(a.values[0]) }}</span>
-          {%- elif name=='par' -%}<span class="qualifier">{{ inline(a.values[0]) }}</span>
-          {%- elif name in ['field','reg'] -%}<i>({{ inline(a.values[0]) }})</i>
-          {%- elif name=='textbf' -%}<b>{{ inline(a.values[0]) }}</b>
-          {%- else -%}<i>{{ inline(a.values[0]) }}</i>{% endif -%}
+            \{{ texname }}{ {{- inline(a.values[0], examples) -}} }
+          {%- elif name=='chem' -%}(atomic number {{ inline(a.values[0], examples) }})
+          {%- elif name=='silentgloss' -%}<span class="silent-gloss" hidden>{{ inline(a.values[0], examples) }}</span>
+          {%- elif name=='gloss' -%}<span class="gloss">{{ inline(a.values[0], examples) }}</span>
+          {%- elif name=='par' -%}<span class="qualifier">{{ inline(a.values[0], examples) }}</span>
+          {%- elif name in ['field','reg'] -%}<i>({{ inline(a.values[0], examples) }})</i>
+          {%- elif name=='textbf' -%}<b>{{ inline(a.values[0], examples) }}</b>
+          {%- else -%}<i>{{ inline(a.values[0], examples) }}</i>{% endif -%}
         {%- else -%}{{- text[start:c.i]|latex_escape -}}{% endif -%}
         {%- if (name in languages or name in single_args or name in double_args or name in zero_args) and a.values|length > expected -%}
           {%- for extra in a.values[expected:] -%}{{- ('{'+extra+'}')|latex_escape -}}{%- endfor -%}
         {%- endif -%}
       {%- elif ch=='{' -%}
-        {{- group(text,c) -}}{{- inline(c.value) -}}
+        {{- group(text,c) -}}{{- inline(c.value, examples) -}}
       {%- else -%}
         {{- ch|latex_escape -}}{%- set c.i=c.i+1 -%}
       {%- endif -%}
     {%- endif -%}
   {%- endfor -%}
+  {%- endset -%}
+  {{- tidy(rendered) -}}
+{%- endmacro %}
+
+{# Expand preposition case labels for display; source typ values stay unchanged. #}
+{% macro type_label(value) -%}
+  {%- if value.startswith('prep+') -%}
+    prep.\nobreakspace w.\nobreakspace {{- ' ' -}}{{- value[5:] | trim | latex_escape -}}
+  {%- else -%}{{- value | latex_escape -}}{%- endif -%}
 {%- endmacro %}
 
 {# Every sense keeps its own captured typ. Typ changes introduce a new block. #}
@@ -119,10 +160,11 @@
   {%- endif -%}
 {%- endif -%}
 {%- if definition.typ and (loop.first or definition.typ != item.definitions[loop.index0-1].typ) -%}
-\mytyp{{ '{' }}{{ definition.typ | latex_escape }}} {{ ' ' }}
+\mytyp{{ '{' }}{{ type_label(definition.typ) }}} {{ ' ' }}
 {%- endif -%}
 {%- if item.definitions|length > 1 -%}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif -%}
-{{- inline(definition.content) -}}{{- stop(definition.content) -}}
+{%- set body = inline(definition.content) | trim -%}
+{{- body -}}{%- if body -%}{{- stop(body) -}}{%- endif -%}
 {%- endfor -%}
 {%- endmacro %}
 
@@ -250,7 +292,7 @@
   \markboth{#1}{#1}%
   {\danetianfont\bfseries #1}%
   \nobreak\hspace{0.5em}%
-  {\footnotesize\scshape expr.}%
+  {\normalfont expr.}%
 }
 
 \NewDocumentCommand{\myety}{m}{%
@@ -381,7 +423,7 @@
   \par\begingroup
   \hangindent=1.2em\hangafter=1
   \noindent\textbullet\enspace{\danetianfont\bfseries #1}%
-  \nobreak\hspace{0.5em}{\footnotesize\scshape expr.}\enspace
+  \nobreak\hspace{0.5em}{\normalfont expr.}\enspace
   #2\par\endgroup
 }
 
@@ -407,7 +449,7 @@
 \tolerance=1800
 \widowpenalty=10000
 \clubpenalty=10000
-\newcommand{\RaeSenseDivider}{\unskip\hspace{0.25em}\textbar\kern-0.1em\textbar\hspace{0.25em}}
+\newcommand{\RaeSenseDivider}{\unskip\hspace{0.25em}\textbar\kern-0.1em\textbar\nobreak\hspace{0.25em}}
 \newcommand{\RaeTypeDivider}{\unskip\hspace{0.4em}\rotatebox{45}{\rule{0.8ex}{0.8ex}}\hspace{0.4em}}
 \newcommand{\RaeExpressionDivider}{\unskip\hspace{0.4em}\rule{1ex}{1ex}\hspace{0.4em}}
 % Only the primary form uses the heading font; other forms match reverse matches.
@@ -426,7 +468,7 @@
   {\danetianfont\bfseries #1.}\nobreak\hspace{0.35em}\ignorespaces
 }
 \RenewDocumentCommand{\myety}{m}{{\small (#1)}\space\ignorespaces}
-\RenewDocumentCommand{\mytyp}{m}{#1.\space\ignorespaces}
+\RenewDocumentCommand{\mytyp}{m}{\textit{#1.}\nobreakspace\ignorespaces}
 \RenewDocumentCommand{\mygloss}{m}{#1}
 \RenewDocumentCommand{\mypar}{m}{\textit{#1}}
 \RenewDocumentCommand{\mychem}{m}{\mypar{chemical element with atomic number #1}}
@@ -439,7 +481,7 @@
 \RenewDocumentCommand{\myrus}{m m}{{\textit{Rus.}\space{\cyrillicfont #1}\space\emph{#2}}}
 
 \RenewDocumentCommand{\mysilentgloss}{m}{}
-\RenewDocumentCommand{\myex}{m m}{\textit{#1}\enspace\textquotedblleft #2\textquotedblright}
+\RenewDocumentCommand{\myex}{m m}{\textit{#1}\space\textquotedblleft #2\textquotedblright}
 \RenewDocumentCommand{\myfield}{m}{\textit{#1.}\nobreakspace}
 \RenewDocumentCommand{\myreg}{m}{\textit{#1.}\nobreakspace}
 \RenewDocumentCommand{\LexeratLinkedExpression}{m m}{%
@@ -468,7 +510,8 @@
   \vspace{1em}%
 }]
 \markboth{Danetian--English}{Danetian--English}
-\justifying
+% Keep natural word spacing in narrow dictionary columns; allow hyphenation.
+\RaggedRight
 {% endraw %}{% for entry in entries %}
 {% if entry.kind == 'expression' %}\myexpr{{ '{' }}{{ entry.forms | join(', ') | latex_escape }}}{% else %}\mykey{{ '{' }}{{ entry.lemma | latex_escape }}}{{ '{' }}{{ entry.forms[1:] | join(', ') | latex_escape }}}{% endif %} {% if entry.ety %}\myety{{ '{' }}{{ inline(entry.ety) }}} {% endif %}{{ senses(entry) }}{% for expression in entry.expressions %}{% if loop.first %}\RaeExpressionDivider{}{% else %}\RaeSenseDivider{}{% endif %}
 \LexeratLinkedExpression{{ '{' }}{{ expression.forms | join(', ') | latex_escape }}}{{ '{' }}{% if expression.ety %}\myety{{ '{' }}{{ inline(expression.ety) }}} {% endif %}{{ senses(expression) }}}{% endfor %}
@@ -483,6 +526,7 @@
   \vspace{1em}%
 }]
 \markboth{English--Danetian}{English--Danetian}
+\RaggedRight
 \begingroup
 % Newmark-style matches: the complete definition, its own type, then headword.
 % Gloss markers identify lookup words; they need not italicize the definition.
@@ -490,7 +534,7 @@
 \renewcommand{\mysilentgloss}[1]{}
 {% endraw %}
 {% for keyword, matches in reverse_index.items() %}
-\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}\RaeSenseDivider{}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{{ inline(match.definition.content) }}{{ stop(match.definition.content) }} {% if match.definition.typ %}\mytyp{{ '{' }}{{ match.definition.typ | latex_escape }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}}{% if match.entry.kind == 'expression' %}\enspace{\footnotesize\scshape expr.}{% endif %}{% endfor %}
+\LexeratReverseHead{{ '{' }}{{ keyword | latex_escape }}} {% for match in matches %}{% if not loop.first %}\RaeSenseDivider{}{% endif %}{% if matches|length > 1 %}\LexeratSenseLabel{{ '{' }}{{ loop.index }}}{% endif %}{% set examples = namespace(items=[]) %}{% set body = inline(match.definition.content, examples) | trim %}{{ body }}{% if body %}{{ stop(body) }} {% endif %}{% if match.definition.typ %}\mytyp{{ '{' }}{{ type_label(match.definition.typ) }}} {% endif %}{\danetianfont\bfseries {{ match.entry.lemma | latex_escape }}{% if not match.entry.lemma.endswith('.') %}.{% endif %}}{% if match.entry.kind == 'expression' %}\nobreakspace{\normalfont expr.}{% endif %}{% for example in examples.items %}\space\myex{{ '{' }}{{ inline(example[0]) }}}{{ '{' }}{{ inline(example[1]) }}}{% endfor %}{% endfor %}
 {% endfor %}
 \endgroup
 {% endif %}
