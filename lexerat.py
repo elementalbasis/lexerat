@@ -246,7 +246,7 @@ class Interpreter:
                 raise parser.error(str(exc), node.offset) from exc
         self.resolve_links(ctx, parser)
         if sort:
-            key = sort_key or (lambda e: e.lemma.casefold())
+            key = sort_key or (lambda e: e.lemma.lstrip('-').casefold())
             ctx.entries.sort(key=key)
             for entry in ctx.entries:
                 entry.expressions.sort(key=key)
