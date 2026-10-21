@@ -257,6 +257,89 @@ def parse(source, filename='<string>', **kwargs):
     return Interpreter().interpret(source, filename, **kwargs)
 
 
+@dataclass(frozen=True)
+class IndexMatch:
+    entry: Entry
+    definition: Definition
+    sense_number: int
+
+
+def references(text):
+    """Yield $word, &word, ${phrase}, and &{phrase} lookup terms.
+
+    Bare terms accept Unicode letters/numbers/marks, underscores, and internal
+    hyphens/apostrophes. Use braces for spaces or other punctuation. Backslash
+    escapes a following character; an escaped marker is not an index term.
+    """
+    def word_char(char):
+        return char.isalnum() or char == '_' or unicodedata.category(char).startswith('M')
+
+    i = 0
+    while i < len(text):
+        if text[i] == '\\':
+            i += 2
+            continue
+        if text[i] not in '$&':
+            i += 1
+            continue
+        marker = i
+        i += 1
+        if i < len(text) and text[i] == '{':
+            i += 1
+            start, depth = i, 1
+            while i < len(text) and depth:
+                if text[i] == '\\':
+                    i += 2
+                    continue
+                if text[i] == '{':
+                    depth += 1
+                elif text[i] == '}':
+                    depth -= 1
+                if depth:
+                    i += 1
+            if depth:
+                raise ValueError(f'unclosed index reference at character {marker + 1}')
+            term = text[start:i]
+            i += 1
+        else:
+            start = i
+            while i < len(text):
+                if word_char(text[i]):
+                    i += 1
+                elif (i > start and text[i] in "-'’" and i + 1 < len(text)
+                      and word_char(text[i + 1])):
+                    i += 1
+                else:
+                    break
+            term = text[start:i]
+        term = unicodedata.normalize('NFC', ' '.join(term.split()))
+        if term:
+            yield term
+
+
+def build_reverse_index(entries):
+    """Group marked terms by original entry/definition, including expressions.
+
+    Only independent entries are visited: linked display copies in
+    entry.expressions must not be traversed a second time.
+    """
+    index = {}
+    seen_entries = set()
+    for entry in entries:
+        if id(entry) in seen_entries:
+            continue
+        seen_entries.add(id(entry))
+        for number, definition in enumerate(entry.definitions, 1):
+            try:
+                terms = dict.fromkeys(references(definition.content))
+            except ValueError as exc:
+                raise ValueError(f'{entry.lemma!r}, definition {number}: {exc}') from exc
+            match = IndexMatch(entry, definition, number)
+            for term in terms:
+                index.setdefault(term, []).append(match)
+    return dict(sorted(index.items(), key=lambda item: (item[0].casefold(), item[0])))
+
+
 def render(entries, template_path, *, options=None):
     from jinja2 import Environment, FileSystemLoader, StrictUndefined
     from markupsafe import escape
@@ -286,8 +369,10 @@ def render(entries, template_path, *, options=None):
         for c in ('' if text is None else str(text))
     )
 
+    entries = list(entries)
     return env.get_template(path.name).render(
         entries=entries,
+        reverse_index=build_reverse_index(entries),
         options=options or {},
     )
 
