@@ -337,7 +337,13 @@ def build_reverse_index(entries):
             match = IndexMatch(entry, definition, number)
             for term in terms:
                 index.setdefault(term, []).append(match)
-    return dict(sorted(index.items(), key=lambda item: (item[0].casefold(), item[0])))
+    return dict(sorted(
+        index.items(),
+        key=lambda item: (
+            item[0].lstrip('-').casefold(),
+            item[0]
+            ),
+        ))
 
 
 def render(entries, template_path, *, options=None):
