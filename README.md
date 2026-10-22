@@ -4,6 +4,18 @@ A conlang lexicon parser.
 
 
 
+## Installation
+
+Requires Python 3.10 or newer. HTML and LaTeX rendering also require Jinja2.
+
+```bash
+git clone https://github.com/elementalbasis/lexerat.git
+cd lexerat
+pip install Jinja2
+```
+
+
+
 ## Sample usage
 
 ```
