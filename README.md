@@ -7,6 +7,7 @@ A conlang lexicon parser.
 ## Installation
 
 Requires Python 3.10 or newer. HTML and LaTeX rendering also require Jinja2.
+It is recommended to use XeLaTeX.
 
 ```bash
 git clone https://github.com/elementalbasis/lexerat.git
@@ -23,10 +24,10 @@ pip install Jinja2
 python lexerat.py examples/basic.txt -o dictionary.json
 
 # For HTML output:
-python lexerat.py examples/basic.txt --template templates/dictionary.html.j2 -o dictionary.html
+python lexerat.py examples/basic.txt --template templates/basic.html.j2 -o dictionary.html
 
 # For LaTeX output:
-python lexerat.py examples/basic.txt --template templates/dictionary.tex.j2 -o dictionary.tex
+python lexerat.py examples/basic.txt --template templates/basic.tex.j2 -o dictionary.tex
 ```
 
 
@@ -260,3 +261,4 @@ Lexerat is licensed under the [MIT License](LICENSE).
 
 * Make it so that all keywords within the @typ tag are collected, and then the
 user can edit a TSV table to set their abbreviations.
+* Fix up the basic templates; they should not output `$`.

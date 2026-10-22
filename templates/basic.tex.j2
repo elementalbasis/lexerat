@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage[margin=1in]{geometry}
+
+{% macro definitions(entry) %}
+{% if entry.definitions %}
+\begin{enumerate}
+{% for definition in entry.definitions %}
+\item
+{% if definition.typ %}
+\textit{ {{ definition.typ | latex_escape }} }
+{% endif %}
+{{ definition.content | latex_escape }}
+{% endfor %}
+\end{enumerate}
+{% endif %}
+{% endmacro %}
+
+\begin{document}
+
+\section*{Dictionary}
+
+{% for entry in entries %}
+{% if entry.kind == 'lemma' or not entry.links %}
+
+\subsection*{ {{ entry.forms | join(', ') | latex_escape }} }
+
+{% if entry.ety %}
+{{ entry.ety | latex_escape }}
+{% endif %}
+
+{{ definitions(entry) }}
+
+{% for expression in entry.expressions %}
+\subsubsection*{ {{ expression.lemma | latex_escape }} }
+
+{% if expression.ety %}
+{{ expression.ety | latex_escape }}
+{% endif %}
+
+{{ definitions(expression) }}
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+
+\end{document}
