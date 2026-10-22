@@ -222,6 +222,9 @@ The built-in macro handlers currently do not use this value.
 
 
 
+## License
+
+Lexerat is licensed under the [MIT License](LICENSE).
 
 
 
