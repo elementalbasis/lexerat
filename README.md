@@ -28,6 +28,9 @@ python lexerat.py examples/basic.txt --template templates/basic.html.j2 -o dicti
 
 # For LaTeX output:
 python lexerat.py examples/basic.txt --template templates/basic.tex.j2 -o dictionary.tex
+
+# To convert LaTeX to PDF:
+xelatex dictionary.tex
 ```
 
 
