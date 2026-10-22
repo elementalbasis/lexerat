@@ -3,8 +3,6 @@
 A conlang lexicon parser.
 
 
-## Macros
-
 ## Macro syntax
 
 Lexerat describes dictionary entries using macros:
