@@ -3,6 +3,22 @@
 A conlang lexicon parser.
 
 
+
+## Sample usage
+
+```
+# For JSON output:
+python lexerat.py examples/basic.txt -o dictionary.json
+
+# For HTML output:
+python lexerat.py examples/basic.txt --template templates/dictionary.html.j2 -o dictionary.html
+
+# For LaTeX output:
+python lexerat.py examples/basic.txt --template templates/dictionary.tex.j2 -o dictionary.tex
+```
+
+
+
 ## Macro syntax
 
 Lexerat describes dictionary entries using macros:

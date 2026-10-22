@@ -1,0 +1,8 @@
+% Spanish-English example dictionary
+
+@key(casa) @ety(From Latin casa.) @typ(f) @def(a $house) @def(a $home)
+@key(hacer) @ety(From Latin facere.) @typ(v) @def(to $make) @def(to $do)
+@key(pan) @ety(From Latin panis.) @typ(m) @def($bread)
+
+@expr(hacer el pan) @link(hacer, pan) @typ(verbal phrase) @def(to $bake $bread)
+@expr(en casa) @link(casa) @typ(adverbial phrase) @def(at $home)
