@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+- `@ipa(...)` for recording pronounciation.
+
+### Known limitations
+
+- There can currently only be a single `@ipa` tag per entry.
+- The `@ipa` tag does not throw an error if empty.
+
+
+
 ## [0.1.0] - 2026-10-22
 
 First public release.

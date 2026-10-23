@@ -221,6 +221,9 @@ class Entry:
     # Hold the etymology
     ety: str | None = None
 
+    # Hold the IPA
+    ipa: str | None = None
+
     # Since Entry is a dataclass, __init__() is defined automatically, so
     # there's some fuckshit that we need to do. We call field() to create a
     # fresh empty list for each entry.
@@ -278,6 +281,7 @@ class Interpreter:
         # Dict of handler functions
         self.macros = {
                 'key': self.key,
+                'ipa': self.ipa,
                 'ety': self.ety,
                 'typ': self.typ,
                 'def': self.definition,
@@ -381,6 +385,13 @@ class Interpreter:
         if entry.ety is not None:
             raise ValueError('Duplicate @ety in entry')
         entry.ety = call.args[0]
+
+    # Handler function for the @ipa macro
+    def ipa(self, ctx, call):
+        entry = ctx.require_entry()
+        if entry.ipa is not None:
+            raise ValueError('Duplicate @ipa in entry')
+        entry.ipa = call.args[0]
 
     # Handler function for the @typ macro. This macro sets the grammatical type
     # that should be assumed for any subsequent @def macros.
