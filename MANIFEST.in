@@ -1,0 +1,4 @@
+include CHANGELOG.md
+recursive-include examples *.txt
+recursive-include templates *.j2
+recursive-include tests *.py

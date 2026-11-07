@@ -12,8 +12,31 @@ It is recommended to use XeLaTeX.
 ```bash
 git clone https://github.com/elementalbasis/lexerat.git
 cd lexerat
-pip install Jinja2
+python -m pip install ".[render]"
 ```
+
+For parsing and JSON output without rendering dependencies, install with
+`python -m pip install .` instead. Installation provides both the `lexerat`
+Python module and the `lexerat` command. Existing `python lexerat.py`
+commands continue to work from the repository.
+
+You can also install the release directly from GitHub:
+
+```bash
+python -m pip install "lexerat[render] @ git+https://github.com/elementalbasis/lexerat.git@v0.2.1"
+```
+
+Templates and examples are available in the repository and source archive.
+
+### Python usage
+
+```python
+from lexerat import parse
+
+entries = parse("@key(viros) @infl(o-stem) @typ(m) @def(man)")
+print(entries[0].infl)  # o-stem
+```
+
 
 
 

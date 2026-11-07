@@ -4,6 +4,18 @@
 
 
 
+## [0.2.1] - 2026-11-06
+
+### Added
+
+- Python packaging metadata for installation with pip and import as `lexerat`.
+- Installed `lexerat` command, alongside the existing script interface.
+- Optional `render` dependency group for Jinja2.
+- Installation and Python API examples in the README.
+- Templates, examples, tests, and changelog in the source distribution.
+
+
+
 ## [0.2.0] - 2026-11-06
 
 - Added `@ipa(...)` for recording pronunciation.
