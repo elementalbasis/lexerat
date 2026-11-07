@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - `@ipa(...)` for recording pronounciation.
+- Semicolons no longer allowed as field separators; only commas.
 
 ### Known limitations
 

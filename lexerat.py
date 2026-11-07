@@ -47,7 +47,7 @@ class Parser:
             is_argument: Whether it's reading inside a macro argument. Stop
                 before a closing parenthesis at depth zero, and reject nested
                 macros.
-            split_commas: Whether commas and semicolons at depth zero also end
+            split_commas: Whether commas at depth zero also end
                 the argument. Only applies when is_argument is true.
 
         Returns:
@@ -98,7 +98,7 @@ class Parser:
 
             # If you reach the end of an argument, break the parsing loop.
             if is_argument and depth == 0:
-                if char == ')' or (char in ',;' and split_commas):
+                if char == ')' or (char == ',' and split_commas):
                     break
 
             # Disallow nested macros

@@ -66,16 +66,16 @@ any remaining arguments are alternative forms.
 @key(donom, donosio)
 ```
 
-Separate forms with commas or semicolons:
+Separate forms with commas:
 
 ```text
-@key(enos; ena; enod)
+@key(enos, ena, enod)
 ```
 
-And mix them if it suits your purposes:
+For example, a verb can list its principal parts as follows:
 
 ```text
-@key(didomi, didymos; dom, dyme; dedoka, dedykme)
+@key(didomi, didymos, dom, dyme, dedoka, dedykme)
 ```
 
 Each form must be nonempty. Starting a new entry clears the previous
@@ -91,8 +91,7 @@ Set the current entry's etymology.
 @key(donom) @ety(From PIE *déh₃nom; cf. Latin donum)
 ```
 
-An entry may have only one `@ety` macro. Commas and semicolons are
-treated as ordinary text.
+An entry may have only one `@ety` macro. The entire argument is treated as text.
 
 This macro can also be used in expression entries.
 
@@ -122,7 +121,7 @@ additional senses, in order.
 ```
 
 Each definition keeps the grammatical type that was last specified.
-Commas and semicolons are treated as ordinary text.
+The entire argument is treated as text.
 
 This macro can also be used in expression entries.
 
@@ -137,7 +136,7 @@ Start a new expression entry.
 ```
 
 The expression must be nonempty. Its entire argument is treated as one
-form, including any commas or semicolons.
+form, including punctuation.
 
 Like `@key`, this macro starts a new current entry and clears the
 previous grammatical type. An expression can have its own etymology,
@@ -161,7 +160,7 @@ the expression `when pigs fly`.
 
 - This macro can only be used within an expression entry.
 - Targets must be primary lemmas declared with `@key`, not alternative forms.
-- Separate targets with commas or semicolons.
+- Separate targets with commas.
 - Targets may be declared before or after the expression.
 - Matching is case-sensitive and preserves accents. Canonically
   equivalent Unicode spellings are treated as equal.
