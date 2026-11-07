@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
-- `@ipa(...)` for recording pronounciation.
+
+
+## [0.2.0] - 2026-11-06
+
+- Added `@ipa(...)` for recording pronunciation.
 - Semicolons no longer allowed as field separators; only commas.
-- `@infl(...)` for recording inflection metadata.
+- Added `@infl(...)` for recording inflection metadata.
 
 ### Known limitations
 
