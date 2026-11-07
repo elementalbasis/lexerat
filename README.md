@@ -49,6 +49,7 @@ starts a new one. Macro names are case-sensitive.
 | Macro | Purpose |
 |---|---|
 | `@key(lemma, alternatives...)` | Start a dictionary entry |
+| `@infl(text)` | Set the current entry's inflection metadata |
 | `@ety(text)` | Set the current entry's etymology |
 | `@typ(text)` | Set the grammatical type for subsequent definitions |
 | `@def(text)` | Add a definition |
@@ -80,6 +81,32 @@ For example, a verb can list its principal parts as follows:
 
 Each form must be nonempty. Starting a new entry clears the previous
 grammatical type.
+
+
+
+### `@infl(text)`
+
+Set the current entry's inflection metadata. Its value is plain text:
+
+```text
+@key(amo) @infl(1)
+@key(viros) @infl(o-stem)
+@key(apojekmi) @infl(jekmi)
+```
+
+Lexerat assigns no meaning to this value: it can name a class, a model word,
+or any convention chosen by the dictionary author. It does not look up
+entries, traverse references, or generate inflection tables.
+
+An entry may have only one `@infl` macro. The entire argument is stored as
+one string, with surrounding whitespace removed as for other macros. An
+empty argument is stored as an empty string. If omitted, the field is `None`
+(`null` in JSON).
+
+The value is available as `entry.infl` to Python code and Jinja templates,
+and as `"infl"` in JSON output. Like etymology, it belongs to the whole entry
+and can also be used in expression entries. Inflectors and other consumers
+decide how to interpret it.
 
 
 

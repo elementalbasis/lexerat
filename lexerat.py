@@ -243,6 +243,9 @@ class Entry:
     # displayed underneath them.
     expressions: list[Entry] = field(default_factory=list)
 
+    # Opaque inflection metadata, interpreted by the user.
+    infl: str | None = None
+
     @property
     def lemma(self):
         return self.forms[0]
@@ -283,6 +286,7 @@ class Interpreter:
                 'key': self.key,
                 'ipa': self.ipa,
                 'ety': self.ety,
+                'infl': self.infl,
                 'typ': self.typ,
                 'def': self.definition,
                 'expr': self.expression,
@@ -385,6 +389,13 @@ class Interpreter:
         if entry.ety is not None:
             raise ValueError('Duplicate @ety in entry')
         entry.ety = call.args[0]
+
+    # Handler function for the @infl macro. Preserve its value as text.
+    def infl(self, ctx, call):
+        entry = ctx.require_entry()
+        if entry.infl is not None:
+            raise ValueError('Duplicate @infl in entry')
+        entry.infl = call.args[0]
 
     # Handler function for the @ipa macro
     def ipa(self, ctx, call):

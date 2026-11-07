@@ -4,6 +4,7 @@
 
 - `@ipa(...)` for recording pronounciation.
 - Semicolons no longer allowed as field separators; only commas.
+- `@infl(...)` for recording inflection metadata.
 
 ### Known limitations
 
